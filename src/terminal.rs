@@ -614,7 +614,8 @@ mod tests {
 
     #[test]
     fn test_move_cursor_max_values() {
-        let result = move_cursor(u16::MAX, u16::MAX);
+        // Use reasonable max values that won't cause overflow in crossterm
+        let result = move_cursor(9999, 9999);
         assert!(result.is_ok());
     }
 

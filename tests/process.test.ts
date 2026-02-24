@@ -121,7 +121,12 @@ describe("Exec Sync Tests", () => {
   });
 
   test("execSync should return ProcessOutput structure", () => {
-    const result = execSync("ls");
+    let command = "ls";
+    if (process.platform === "win32") {
+      command = "dir";
+    }
+    const result = execSync(command);
+    console.log(result)
     expect("stdout" in result).toBe(true);
     expect("stderr" in result).toBe(true);
     expect("success" in result).toBe(true);

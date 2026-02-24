@@ -347,6 +347,12 @@ mod tests {
     fn test_is_pty_supported() {
         let supported = is_pty_supported();
         #[cfg(unix)]
-        assert!(supported);
+        {
+            assert!(supported);
+        }
+        #[cfg(not(unix))]
+        {
+            assert!(!supported);
+        }
     }
 }
