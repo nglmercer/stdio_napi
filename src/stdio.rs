@@ -258,8 +258,10 @@ pub fn get_spinner_frame(frame: u32) -> String {
 /// ```
 #[napi]
 pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
+    use crossterm::cursor::MoveToColumn;
     use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
     use crossterm::terminal;
+    use crossterm::QueueableCommand;
 
     // Check if stdin is a TTY
     if !atty::is(atty::Stream::Stdin) {
@@ -286,6 +288,11 @@ pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
                 {
                     match code {
                         KeyCode::Enter => {
+                            // Move to beginning of line and clear it
+                            let _ = io::stdout().queue(MoveToColumn(0));
+                            let _ = io::stdout().queue(crossterm::terminal::Clear(
+                                crossterm::terminal::ClearType::UntilNewLine,
+                            ));
                             println!();
                             break;
                         }
@@ -529,14 +536,23 @@ pub async fn read_line_interactive(
                 {
                     match code {
                         KeyCode::Enter => {
+                            // Move to beginning of line and clear it before exiting
+                            let _ = io::stdout().queue(MoveToColumn(0));
+                            let _ = io::stdout().queue(crossterm::terminal::Clear(
+                                crossterm::terminal::ClearType::UntilNewLine,
+                            ));
                             println!();
                             break;
                         }
                         KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
+                            // Move to beginning of line before exiting
+                            let _ = io::stdout().queue(MoveToColumn(0));
                             println!("^C");
                             return Ok(String::new());
                         }
                         KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => {
+                            // Move to beginning of line before exiting
+                            let _ = io::stdout().queue(MoveToColumn(0));
                             println!("^D");
                             return Ok(String::new());
                         }
@@ -555,31 +571,26 @@ pub async fn read_line_interactive(
                             if !suffix.is_empty() {
                                 print!("{}", suffix);
                                 // Move cursor back to correct position
-                                let _ = io::stdout()
-                                    .queue(MoveLeft(suffix.chars().count() as u16));
+                                let _ = io::stdout().queue(MoveLeft(suffix.chars().count() as u16));
                             }
                             let _ = io::stdout().flush();
                         }
                         KeyCode::Backspace => {
                             if cursor_pos > 0 && !input.is_empty() {
                                 // Find the character before cursor
-                                let char_pos = input
-                                    .char_indices()
-                                    .nth(cursor_pos - 1)
-                                    .map(|(i, _)| i);
+                                let char_pos =
+                                    input.char_indices().nth(cursor_pos - 1).map(|(i, _)| i);
                                 if let Some(pos) = char_pos {
                                     input.remove(pos);
                                     cursor_pos -= 1;
 
                                     // Redraw
                                     let _ = io::stdout().queue(MoveLeft(1));
-                                    let suffix: String =
-                                        input.chars().skip(cursor_pos).collect();
+                                    let suffix: String = input.chars().skip(cursor_pos).collect();
                                     print!("{}", suffix);
                                     print!(" "); // Clear the deleted character
                                     let move_back = suffix.chars().count() + 1;
-                                    let _ = io::stdout()
-                                        .queue(MoveLeft(move_back as u16));
+                                    let _ = io::stdout().queue(MoveLeft(move_back as u16));
                                     let _ = io::stdout().flush();
                                 }
                             }
@@ -587,19 +598,16 @@ pub async fn read_line_interactive(
                         KeyCode::Delete => {
                             if cursor_pos < input.len() {
                                 // Delete character at cursor
-                                let char_pos =
-                                    input.char_indices().nth(cursor_pos).map(|(i, _)| i);
+                                let char_pos = input.char_indices().nth(cursor_pos).map(|(i, _)| i);
                                 if let Some(pos) = char_pos {
                                     input.remove(pos);
 
                                     // Redraw
-                                    let suffix: String =
-                                        input.chars().skip(cursor_pos).collect();
+                                    let suffix: String = input.chars().skip(cursor_pos).collect();
                                     print!("{}", suffix);
                                     print!(" "); // Clear the deleted character
                                     let move_back = suffix.chars().count() + 1;
-                                    let _ = io::stdout()
-                                        .queue(MoveLeft(move_back as u16));
+                                    let _ = io::stdout().queue(MoveLeft(move_back as u16));
                                     let _ = io::stdout().flush();
                                 }
                             }
@@ -620,8 +628,7 @@ pub async fn read_line_interactive(
                         }
                         KeyCode::Home => {
                             if cursor_pos > 0 {
-                                let _ = io::stdout()
-                                    .queue(MoveLeft(cursor_pos as u16));
+                                let _ = io::stdout().queue(MoveLeft(cursor_pos as u16));
                                 cursor_pos = 0;
                                 let _ = io::stdout().flush();
                             }
@@ -652,8 +659,8 @@ pub async fn read_line_interactive(
                                 let new_len = input.chars().count();
                                 if old_len > new_len {
                                     print!("{}", " ".repeat(old_len - new_len));
-                                    let _ = io::stdout()
-                                        .queue(MoveLeft((old_len - new_len) as u16));
+                                    let _ =
+                                        io::stdout().queue(MoveLeft((old_len - new_len) as u16));
                                 }
                                 cursor_pos = input.chars().count();
                                 let _ = io::stdout().flush();
@@ -676,8 +683,8 @@ pub async fn read_line_interactive(
                                 let new_len = input.chars().count();
                                 if old_len > new_len {
                                     print!("{}", " ".repeat(old_len - new_len));
-                                    let _ = io::stdout()
-                                        .queue(MoveLeft((old_len - new_len) as u16));
+                                    let _ =
+                                        io::stdout().queue(MoveLeft((old_len - new_len) as u16));
                                 }
                                 cursor_pos = input.chars().count();
                                 let _ = io::stdout().flush();
@@ -751,14 +758,16 @@ impl BufferedReader {
         // Check if stdin is a TTY
         if !atty::is(atty::Stream::Stdin) {
             return Err(napi::Error::from_reason(
-                "enable_raw_mode requires a terminal (TTY). Not running in interactive mode.".to_string(),
+                "enable_raw_mode requires a terminal (TTY). Not running in interactive mode."
+                    .to_string(),
             ));
         }
 
         terminal::enable_raw_mode()
             .map_err(|e| napi::Error::from_reason(format!("Failed to enable raw mode: {}", e)))?;
-        
-        self.is_raw_mode.store(true, std::sync::atomic::Ordering::SeqCst);
+
+        self.is_raw_mode
+            .store(true, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
@@ -769,8 +778,9 @@ impl BufferedReader {
 
         terminal::disable_raw_mode()
             .map_err(|e| napi::Error::from_reason(format!("Failed to disable raw mode: {}", e)))?;
-        
-        self.is_raw_mode.store(false, std::sync::atomic::Ordering::SeqCst);
+
+        self.is_raw_mode
+            .store(false, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
@@ -783,7 +793,8 @@ impl BufferedReader {
 
         if !self.is_raw_mode.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(napi::Error::from_reason(
-                "read_key requires raw mode to be enabled. Call enable_raw_mode() first.".to_string(),
+                "read_key requires raw mode to be enabled. Call enable_raw_mode() first."
+                    .to_string(),
             ));
         }
 
@@ -792,14 +803,16 @@ impl BufferedReader {
             if event::poll(std::time::Duration::from_millis(100))
                 .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
             {
-                if let Event::Key(KeyEvent { code, modifiers, .. }) = event::read()
+                if let Event::Key(KeyEvent {
+                    code, modifiers, ..
+                }) = event::read()
                     .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?
                 {
                     // Handle Ctrl+C
                     if code == KeyCode::Char('c') && modifiers.contains(KeyModifiers::CONTROL) {
                         return Ok(Some("\x03".to_string()));
                     }
-                    
+
                     // Handle Ctrl+D
                     if code == KeyCode::Char('d') && modifiers.contains(KeyModifiers::CONTROL) {
                         return Ok(Some("\x04".to_string()));
@@ -839,7 +852,8 @@ impl BufferedReader {
     pub async fn read_line_raw(&self) -> napi::Result<Option<String>> {
         if !self.is_raw_mode.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(napi::Error::from_reason(
-                "read_line_raw requires raw mode to be enabled. Call enable_raw_mode() first.".to_string(),
+                "read_line_raw requires raw mode to be enabled. Call enable_raw_mode() first."
+                    .to_string(),
             ));
         }
 
@@ -858,7 +872,9 @@ impl BufferedReader {
                 if event::poll(std::time::Duration::from_millis(100))
                     .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
                 {
-                    if let Event::Key(KeyEvent { code, modifiers, .. }) = event::read()
+                    if let Event::Key(KeyEvent {
+                        code, modifiers, ..
+                    }) = event::read()
                         .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?
                     {
                         break (code, modifiers);

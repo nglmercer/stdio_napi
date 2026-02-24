@@ -110,6 +110,13 @@ pub fn get_terminal_info() -> TerminalInfo {
 /// ```
 #[napi]
 pub fn get_terminal_size() -> napi::Result<TerminalSize> {
+    // Check if stdout is a TTY before trying to get terminal size
+    if !is_stdout_tty() {
+        return Err(napi::Error::from_reason(
+            "get_terminal_size requires a terminal (TTY). Not running in interactive mode.".to_string(),
+        ));
+    }
+    
     let (columns, rows) = size()
         .map_err(|e| napi::Error::from_reason(format!("Failed to get terminal size: {}", e)))?;
 

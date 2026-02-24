@@ -5,7 +5,7 @@
  * Run: bun run examples/progress/bar.ts
  */
 
-import { printProgress, printSuccess, printInfo, clearScreen } from "../../index.js";
+import { printProgress, printSuccess, printInfo } from "../../index.js";
 
 async function main() {
   printInfo("=== Progress Bar Demo ===\n");
