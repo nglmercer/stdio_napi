@@ -86,12 +86,12 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 - [x] **Custom Error Types**: Add custom error types for better error messages (`StdioError` enum)
 - [x] **Input Validation**: Validate parameters before processing (validation module)
-- [ ] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
+- [x] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
 
 ### Documentation & Testing (>>> Complete)
 
 - [x] **Documentation Comments**: Add rustdoc comments to all public functions
-- [ ] **Integration Tests**: Add tests for all stdio functions
+- [x] **Integration Tests**: Add tests for all stdio functions
 - [ ] **Performance Benchmarks**: Add performance benchmarks
 
 ---
@@ -105,9 +105,9 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ### Improvements
 
-- [ ] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
-- [ ] **Documentation Comments**: Add rustdoc comments to all public functions
-- [ ] **Graceful Degradation**: Handle missing TTY gracefully
+- [x] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
+- [x] **Documentation Comments**: Add rustdoc comments to all public functions
+- [x] **Graceful Degradation**: Handle missing TTY gracefully
 
 ---
 

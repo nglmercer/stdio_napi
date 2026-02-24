@@ -242,6 +242,7 @@ pub fn get_spinner_frame(frame: u32) -> String {
 /// Reads a password from stdin with optional character masking.
 /// 
 /// Enables raw mode for secure password input.
+/// Note: Requires a TTY (terminal). If not running in a terminal, returns an error.
 /// 
 /// # Arguments
 /// * `mask` - Optional character to display for each typed character
@@ -258,6 +259,13 @@ pub fn get_spinner_frame(frame: u32) -> String {
 pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
     use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
     use crossterm::terminal;
+    
+    // Check if stdin is a TTY
+    if !atty::is(atty::Stream::Stdin) {
+        return Err(napi::Error::from_reason(
+            "read_password requires a terminal (TTY). Not running in interactive mode.".to_string()
+        ));
+    }
     
     let mask_char = mask.as_deref().and_then(|s| s.chars().next());
     let mut password = String::new();
@@ -313,6 +321,7 @@ pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
 /// Displays an interactive selection menu in the terminal.
 /// 
 /// Uses arrow keys to navigate and Enter to select.
+/// Note: Requires a TTY (terminal). If not running in a terminal, returns an error.
 /// 
 /// # Arguments
 /// * `message` - The menu prompt message
@@ -331,6 +340,13 @@ pub async fn select_menu(message: String, options: Vec<String>) -> napi::Result<
     use crossterm::event::{self, Event, KeyCode, KeyEvent};
     use crossterm::terminal;
     use crossterm::cursor;
+    
+    // Check if stdin is a TTY
+    if !atty::is(atty::Stream::Stdin) {
+        return Err(napi::Error::from_reason(
+            "select_menu requires a terminal (TTY). Not running in interactive mode.".to_string()
+        ));
+    }
     
     if options.is_empty() {
         return Err(napi::Error::from_reason("Options cannot be empty".to_string()));

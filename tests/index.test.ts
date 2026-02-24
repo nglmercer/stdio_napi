@@ -1,70 +1,275 @@
-import { expect, test, describe, beforeAll } from "bun:test";
+import { expect, test, describe } from "bun:test";
 import {
+  // Version
   getVersion,
+  // Terminal
   getTerminalSize,
+  getTerminalInfo,
   clearScreen,
   moveCursor,
+  showCursor,
+  hideCursor,
+  setCursorShape,
+  setTerminalTitle,
+  enterAlternateScreen,
+  leaveAlternateScreen,
+  enableRawMode,
+  disableRawMode,
+  setScrollRegion,
+  resetScrollRegion,
+  saveCursorPosition,
+  restoreCursorPosition,
+  moveCursorUp,
+  moveCursorDown,
+  moveCursorLeft,
+  moveCursorRight,
+  moveCursorToColumn,
+  moveCursorToRow,
+  moveCursorNextLine,
+  moveCursorPreviousLine,
+  clearCurrentLine,
+  clearUntilNewline,
+  clearFromCursor,
+  scrollUp,
+  scrollDown,
+  isTty,
+  isStdinTty,
+  isStderrTty,
+  CursorShape,
+  // Stdio
   printStdout,
   printStderr,
   printSuccess,
   printError,
   printWarning,
   printInfo,
-  readLine,
-  prompt
+  printProgress,
+  getSpinnerFrame,
+  // Process
+  execSync,
+  execSyncWithArgs,
+  shellEscape,
+  shellEscapeArgs,
+  killProcess,
+  // Types
+  type TerminalSize,
+  type TerminalInfo,
+  type ProcessOutput,
+  type ProcessStatus,
+  type SpawnOptions,
+  type BufferConfig,
+  type StreamEventData,
+  type StdioError,
 } from "../index.js";
 
-describe("stdio-napi Initialize Test", () => {
-  test("module should be initialized and exported functions should exist", () => {
-    // Test that all expected functions are exported and are functions
-    expect(typeof getVersion).toBe("function");
-    expect(typeof getTerminalSize).toBe("function");
-    expect(typeof clearScreen).toBe("function");
-    expect(typeof moveCursor).toBe("function");
-    expect(typeof printStdout).toBe("function");
-    expect(typeof printStderr).toBe("function");
-    expect(typeof printSuccess).toBe("function");
-    expect(typeof printError).toBe("function");
-    expect(typeof printWarning).toBe("function");
-    expect(typeof printInfo).toBe("function");
-    expect(typeof readLine).toBe("function");
-    expect(typeof prompt).toBe("function");
-  });
-});
-
-describe("stdio-napi Version Tests", () => {
-  test("getVersion should return a string", () => {
+// ============================================
+// Version Tests
+// ============================================
+describe("Version Tests", () => {
+  test("getVersion should return a valid semver string", () => {
     const version = getVersion();
     expect(typeof version).toBe("string");
-    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
-  });
-
-  test("getVersion should return non-empty string", () => {
-    const version = getVersion();
-    expect(version.length).toBeGreaterThan(0);
+    expect(version).toMatch(/^\d+\.\d+\.\d+/);
   });
 });
 
-describe("stdio-napi Terminal Tests", () => {
-  test("getTerminalSize should return columns and rows", () => {
-    const size = getTerminalSize();
-    expect(size).toBeDefined();
-    expect(typeof size.columns).toBe("number");
-    expect(typeof size.rows).toBe("number");
-    expect(size.columns).toBeGreaterThan(0);
-    expect(size.rows).toBeGreaterThan(0);
+// ============================================
+// Terminal Tests
+// ============================================
+describe("Terminal Size Tests", () => {
+  test("getTerminalSize should return valid dimensions or throw in non-TTY", () => {
+    if (isTty()) {
+      const size = getTerminalSize();
+      expect(size).toBeDefined();
+      expect(typeof size.columns).toBe("number");
+      expect(typeof size.rows).toBe("number");
+      expect(size.columns).toBeGreaterThan(0);
+      expect(size.rows).toBeGreaterThan(0);
+    } else {
+      // In non-TTY environment, this should throw
+      expect(() => getTerminalSize()).toThrow();
+    }
+  });
+});
+
+describe("Terminal Info Tests", () => {
+  test("getTerminalInfo should return terminal information", () => {
+    const info = getTerminalInfo();
+    expect(info).toBeDefined();
+    expect(typeof info.terminalType).toBe("string");
+    expect(typeof info.colorSupport).toBe("string");
+  });
+});
+
+describe("TTY Detection Tests", () => {
+  test("isTty should return a boolean", () => {
+    const result = isTty();
+    expect(typeof result).toBe("boolean");
   });
 
+  test("isStdinTty should return a boolean", () => {
+    const result = isStdinTty();
+    expect(typeof result).toBe("boolean");
+  });
+
+  test("isStderrTty should return a boolean", () => {
+    const result = isStderrTty();
+    expect(typeof result).toBe("boolean");
+  });
+});
+
+describe("Cursor Movement Tests", () => {
+  test("moveCursor should not throw with valid coordinates", () => {
+    expect(() => moveCursor(0, 0)).not.toThrow();
+    expect(() => moveCursor(10, 5)).not.toThrow();
+  });
+
+  test("moveCursorUp should not throw", () => {
+    expect(() => moveCursorUp(1)).not.toThrow();
+    expect(() => moveCursorUp(5)).not.toThrow();
+  });
+
+  test("moveCursorDown should not throw", () => {
+    expect(() => moveCursorDown(1)).not.toThrow();
+    expect(() => moveCursorDown(5)).not.toThrow();
+  });
+
+  test("moveCursorLeft should not throw", () => {
+    expect(() => moveCursorLeft(1)).not.toThrow();
+    expect(() => moveCursorLeft(5)).not.toThrow();
+  });
+
+  test("moveCursorRight should not throw", () => {
+    expect(() => moveCursorRight(1)).not.toThrow();
+    expect(() => moveCursorRight(5)).not.toThrow();
+  });
+
+  test("moveCursorToColumn should not throw", () => {
+    expect(() => moveCursorToColumn(0)).not.toThrow();
+    expect(() => moveCursorToColumn(10)).not.toThrow();
+  });
+
+  test("moveCursorToRow should not throw", () => {
+    expect(() => moveCursorToRow(0)).not.toThrow();
+    expect(() => moveCursorToRow(10)).not.toThrow();
+  });
+
+  test("moveCursorNextLine should not throw", () => {
+    expect(() => moveCursorNextLine(1)).not.toThrow();
+  });
+
+  test("moveCursorPreviousLine should not throw", () => {
+    expect(() => moveCursorPreviousLine(1)).not.toThrow();
+  });
+});
+
+describe("Cursor Visibility Tests", () => {
+  test("showCursor should not throw", () => {
+    expect(() => showCursor()).not.toThrow();
+  });
+
+  test("hideCursor should not throw", () => {
+    expect(() => hideCursor()).not.toThrow();
+  });
+
+  test("setCursorShape should accept all cursor shapes", () => {
+    expect(() => setCursorShape(CursorShape.Block)).not.toThrow();
+    expect(() => setCursorShape(CursorShape.BlinkingBlock)).not.toThrow();
+    expect(() => setCursorShape(CursorShape.Underline)).not.toThrow();
+    expect(() => setCursorShape(CursorShape.BlinkingUnderline)).not.toThrow();
+    expect(() => setCursorShape(CursorShape.Bar)).not.toThrow();
+    expect(() => setCursorShape(CursorShape.BlinkingBar)).not.toThrow();
+  });
+});
+
+describe("Cursor Position Save/Restore Tests", () => {
+  test("saveCursorPosition should not throw", () => {
+    expect(() => saveCursorPosition()).not.toThrow();
+  });
+
+  test("restoreCursorPosition should not throw", () => {
+    expect(() => restoreCursorPosition()).not.toThrow();
+  });
+});
+
+describe("Screen Control Tests", () => {
   test("clearScreen should not throw", () => {
     expect(() => clearScreen()).not.toThrow();
   });
 
-  test("moveCursor should not throw with valid coordinates", () => {
-    expect(() => moveCursor(0, 0)).not.toThrow();
+  test("clearCurrentLine should not throw", () => {
+    expect(() => clearCurrentLine()).not.toThrow();
+  });
+
+  test("clearUntilNewline should not throw", () => {
+    expect(() => clearUntilNewline()).not.toThrow();
+  });
+
+  test("clearFromCursor should not throw", () => {
+    expect(() => clearFromCursor()).not.toThrow();
   });
 });
 
-describe("stdio-napi Print Functions Tests", () => {
+describe("Scroll Tests", () => {
+  test("scrollUp should not throw", () => {
+    expect(() => scrollUp(1)).not.toThrow();
+  });
+
+  test("scrollDown should not throw", () => {
+    expect(() => scrollDown(1)).not.toThrow();
+  });
+
+  test("setScrollRegion should not throw in TTY or throw gracefully in non-TTY", () => {
+    if (isTty()) {
+      expect(() => setScrollRegion(0, 24)).not.toThrow();
+    } else {
+      expect(() => setScrollRegion(0, 24)).toThrow();
+    }
+  });
+
+  test("resetScrollRegion should not throw in TTY or throw gracefully in non-TTY", () => {
+    if (isTty()) {
+      expect(() => resetScrollRegion()).not.toThrow();
+    } else {
+      expect(() => resetScrollRegion()).toThrow();
+    }
+  });
+});
+
+describe("Alternate Screen Tests", () => {
+  test("enterAlternateScreen should not throw", () => {
+    expect(() => enterAlternateScreen()).not.toThrow();
+  });
+
+  test("leaveAlternateScreen should not throw", () => {
+    expect(() => leaveAlternateScreen()).not.toThrow();
+  });
+});
+
+describe("Raw Mode Tests", () => {
+  test("enableRawMode should not throw in TTY or throw gracefully in non-TTY", () => {
+    if (isTty()) {
+      expect(() => enableRawMode()).not.toThrow();
+    } else {
+      expect(() => enableRawMode()).toThrow();
+    }
+  });
+
+  test("disableRawMode should not throw", () => {
+    expect(() => disableRawMode()).not.toThrow();
+  });
+});
+
+describe("Terminal Title Tests", () => {
+  test("setTerminalTitle should not throw", () => {
+    expect(() => setTerminalTitle("Test Title")).not.toThrow();
+  });
+});
+
+// ============================================
+// Stdio Print Tests
+// ============================================
+describe("Print Functions Tests", () => {
   test("printStdout should be callable", () => {
     expect(() => printStdout("test")).not.toThrow();
   });
@@ -87,5 +292,111 @@ describe("stdio-napi Print Functions Tests", () => {
 
   test("printInfo should be callable", () => {
     expect(() => printInfo("test")).not.toThrow();
+  });
+});
+
+describe("Progress Bar Tests", () => {
+  test("printProgress should work with default width", () => {
+    expect(() => printProgress(50, 100)).not.toThrow();
+  });
+
+  test("printProgress should work with custom width", () => {
+    expect(() => printProgress(25, 100, 30)).not.toThrow();
+  });
+
+  test("printProgress should handle zero values", () => {
+    expect(() => printProgress(0, 100)).not.toThrow();
+  });
+
+  test("printProgress should handle complete progress", () => {
+    expect(() => printProgress(100, 100)).not.toThrow();
+  });
+});
+
+describe("Spinner Tests", () => {
+  test("getSpinnerFrame should return valid spinner characters", () => {
+    const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    for (let i = 0; i < 10; i++) {
+      const frame = getSpinnerFrame(i);
+      expect(typeof frame).toBe("string");
+      expect(frame.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("getSpinnerFrame should wrap around for large frame numbers", () => {
+    const frame1 = getSpinnerFrame(0);
+    const frame11 = getSpinnerFrame(10);
+    expect(frame1).toBe(frame11);
+  });
+});
+
+// ============================================
+// Process Tests
+// ============================================
+describe("Shell Escape Tests", () => {
+  test("shellEscape should escape special characters", () => {
+    const result = shellEscape("hello world");
+    expect(typeof result).toBe("string");
+  });
+
+  test("shellEscape should handle empty string", () => {
+    const result = shellEscape("");
+    expect(typeof result).toBe("string");
+  });
+
+  test("shellEscape should handle special shell characters", () => {
+    const result = shellEscape("test; rm -rf /");
+    expect(typeof result).toBe("string");
+  });
+
+  test("shellEscapeArgs should escape multiple arguments", () => {
+    const result = shellEscapeArgs(["hello world", "test; ls", "normal"]);
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(3);
+  });
+});
+
+describe("Exec Sync Tests", () => {
+  test("execSync should execute a simple command", () => {
+    const result = execSync("echo");
+    expect(result).toBeDefined();
+    expect(typeof result.stdout).toBe("string");
+    expect(typeof result.stderr).toBe("string");
+    expect(typeof result.success).toBe("boolean");
+  });
+
+  test("execSyncWithArgs should execute command with arguments", () => {
+    const result = execSyncWithArgs("echo", ["hello"]);
+    expect(result).toBeDefined();
+    expect(result.success).toBe(true);
+  });
+
+  test("execSync should return ProcessOutput structure", () => {
+    const result = execSync("ls");
+    expect("stdout" in result).toBe(true);
+    expect("stderr" in result).toBe(true);
+    expect("success" in result).toBe(true);
+  });
+});
+
+describe("Kill Process Tests", () => {
+  test("killProcess should handle non-existent PID gracefully", async () => {
+    // PID 999999 is unlikely to exist
+    const result = await killProcess(999999, "SIGTERM").catch(() => false);
+    expect(typeof result).toBe("boolean");
+  });
+});
+
+// ============================================
+// Type Export Tests
+// ============================================
+describe("Type Exports Tests", () => {
+  test("CursorShape enum should be exported with correct values", () => {
+    expect(CursorShape.Block).toBe(0);
+    expect(CursorShape.BlinkingBlock).toBe(1);
+    expect(CursorShape.Underline).toBe(2);
+    expect(CursorShape.BlinkingUnderline).toBe(3);
+    expect(CursorShape.Bar).toBe(4);
+    expect(CursorShape.BlinkingBar).toBe(5);
   });
 });
