@@ -9,12 +9,10 @@ use tokio::sync::{broadcast, Mutex};
 
 #[cfg(unix)]
 use {
+    futures_util::StreamExt,
     signal_hook::consts::signal::{self, SIGINT, SIGTERM, SIGUSR1, SIGUSR2, SIGWINCH},
     signal_hook_tokio::Signals,
 };
-
-#[cfg(windows)]
-use winapi::um::wincon;
 
 /// Signal types that can be sent to processes.
 #[napi]
@@ -85,17 +83,13 @@ impl SignalHandler {
                     "user1" | "sigusr1" => signal_set.push(SIGUSR1),
                     "user2" | "sigusr2" => signal_set.push(SIGUSR2),
                     "window" | "sigwinch" => signal_set.push(SIGWINCH),
-                    _ => {
-                        return Err(napi::Error::from_reason(format!(
-                            "Unknown signal: {}",
-                            sig
-                        )))
-                    }
+                    _ => return Err(napi::Error::from_reason(format!("Unknown signal: {}", sig))),
                 }
             }
 
-            let signals = Signals::new(&signal_set)
-                .map_err(|e| napi::Error::from_reason(format!("Failed to create signal handler: {}", e)))?;
+            let signals = Signals::new(&signal_set).map_err(|e| {
+                napi::Error::from_reason(format!("Failed to create signal handler: {}", e))
+            })?;
 
             let (shutdown_tx, _) = broadcast::channel(1);
 
@@ -126,10 +120,14 @@ impl SignalHandler {
                 if let Some(sig) = signals.next().await {
                     Ok(signal_to_info(sig))
                 } else {
-                    Err(napi::Error::from_reason("Signal handler closed".to_string()))
+                    Err(napi::Error::from_reason(
+                        "Signal handler closed".to_string(),
+                    ))
                 }
             } else {
-                Err(napi::Error::from_reason("Signal handler not initialized".to_string()))
+                Err(napi::Error::from_reason(
+                    "Signal handler not initialized".to_string(),
+                ))
             }
         }
 
@@ -188,7 +186,12 @@ pub fn send_signal(pid: u32, signal: String) -> napi::Result<bool> {
             "user2" | "sigusr2" => NixSignal::SIGUSR2,
             "continue" | "sigcont" => NixSignal::SIGCONT,
             "stop" | "sigstop" => NixSignal::SIGSTOP,
-            _ => return Err(napi::Error::from_reason(format!("Unknown signal: {}", signal))),
+            _ => {
+                return Err(napi::Error::from_reason(format!(
+                    "Unknown signal: {}",
+                    signal
+                )))
+            }
         };
 
         kill(Pid::from_raw(pid as i32), nix_signal)
@@ -227,7 +230,12 @@ pub fn get_signal_info(signal: String) -> napi::Result<SignalInfo> {
             "window" | "sigwinch" => signal::SIGWINCH,
             "continue" | "sigcont" => signal::SIGCONT,
             "stop" | "sigstop" => signal::SIGSTOP,
-            _ => return Err(napi::Error::from_reason(format!("Unknown signal: {}", signal))),
+            _ => {
+                return Err(napi::Error::from_reason(format!(
+                    "Unknown signal: {}",
+                    signal
+                )))
+            }
         };
 
         Ok(signal_to_info(sig_num))
@@ -238,56 +246,6 @@ pub fn get_signal_info(signal: String) -> napi::Result<SignalInfo> {
         let _ = signal;
         Err(napi::Error::from_reason(
             "Signal info not available on Windows".to_string(),
-        ))
-    }
-}
-
-/// Register a callback for Ctrl+C (SIGINT).
-///
-/// This function sets up a handler for the interrupt signal.
-/// Returns a function that can be called to remove the handler.
-///
-/// # Example
-/// ```javascript
-/// const { on_interrupt } = require('stdio-napi');
-/// const removeHandler = on_interrupt(() => {
-///   console.log('Interrupted!');
-/// });
-/// // Later: removeHandler();
-/// ```
-#[napi(ts_args_type = "callback: (signal: string) => void")]
-pub fn on_interrupt(callback: napi::JsFunction) -> napi::Result<napi::JsFunction> {
-    let env = callback.get_env();
-
-    #[cfg(unix)]
-    {
-        use signal_hook::flag;
-        use std::sync::atomic::{AtomicBool, Ordering};
-        use std::sync::Arc;
-
-        let running = Arc::new(AtomicBool::new(true));
-        let running_clone = running.clone();
-
-        flag::register(SIGINT, Arc::clone(&running))
-            .map_err(|e| napi::Error::from_reason(format!("Failed to register interrupt handler: {}", e)))?;
-
-        // Create cleanup function
-        let cleanup = env.create_function_from_closure(
-            "cleanup",
-            move |ctx| {
-                running_clone.store(false, Ordering::SeqCst);
-                ctx.env.get_undefined()
-            },
-        )?;
-
-        Ok(cleanup)
-    }
-
-    #[cfg(windows)]
-    {
-        let _ = env;
-        Err(napi::Error::from_reason(
-            "Interrupt handler not supported on Windows".to_string(),
         ))
     }
 }
@@ -311,11 +269,11 @@ pub fn is_background() -> bool {
     #[cfg(unix)]
     {
         use nix::unistd::getpgrp;
-        use nix::unistd::tcgetpgrp;
+        use std::os::unix::io::OwnedFd;
 
         if let Ok(tty) = std::fs::File::open("/dev/tty") {
-            let tty_fd = std::os::unix::io::AsRawFd::as_raw_fd(&tty);
-            if let Ok(fg_pgrp) = tcgetpgrp(tty_fd) {
+            let tty_fd = OwnedFd::from(tty);
+            if let Ok(fg_pgrp) = nix::unistd::tcgetpgrp(&tty_fd) {
                 return fg_pgrp != getpgrp();
             }
         }
@@ -361,8 +319,16 @@ pub fn set_process_group(pid: u32, pgid: u32) -> napi::Result<bool> {
         use nix::unistd::setpgid;
         use nix::unistd::Pid;
 
-        let pid_val = if pid == 0 { Pid::from_raw(0) } else { Pid::from_raw(pid as i32) };
-        let pgid_val = if pgid == 0 { Pid::from_raw(0) } else { Pid::from_raw(pgid as i32) };
+        let pid_val = if pid == 0 {
+            Pid::from_raw(0)
+        } else {
+            Pid::from_raw(pid as i32)
+        };
+        let pgid_val = if pgid == 0 {
+            Pid::from_raw(0)
+        } else {
+            Pid::from_raw(pgid as i32)
+        };
 
         setpgid(pid_val, pgid_val)
             .map(|_| true)

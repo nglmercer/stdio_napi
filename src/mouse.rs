@@ -3,12 +3,11 @@
 //! This module provides mouse event capture and handling capabilities
 //! for terminal applications that support mouse reporting.
 
-use napi_derive::napi;
 use crossterm::{
-    event::{self, Event, MouseEvent, MouseEventKind, MouseButton},
-    terminal,
-    execute,
+    event::{self, Event, MouseButton, MouseEvent, MouseEventKind},
+    execute, terminal,
 };
+use napi_derive::napi;
 use std::io::{stdout, Write};
 
 /// Mouse button types
@@ -78,16 +77,12 @@ pub fn enable_mouse() -> napi::Result<()> {
     // Check if stdin is a TTY
     if !atty::is(atty::Stream::Stdin) {
         return Err(napi::Error::from_reason(
-            "enable_mouse requires a terminal (TTY).".to_string()
+            "enable_mouse requires a terminal (TTY).".to_string(),
         ));
     }
 
-    execute!(
-        stdout(),
-        event::EnableMouseCapture
-    ).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to enable mouse capture: {}", e))
-    })
+    execute!(stdout(), event::EnableMouseCapture)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to enable mouse capture: {}", e)))
 }
 
 /// Disables mouse event reporting in the terminal.
@@ -102,12 +97,8 @@ pub fn enable_mouse() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn disable_mouse() -> napi::Result<()> {
-    execute!(
-        stdout(),
-        event::DisableMouseCapture
-    ).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to disable mouse capture: {}", e))
-    })
+    execute!(stdout(), event::DisableMouseCapture)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to disable mouse capture: {}", e)))
 }
 
 /// Reads a single mouse event from the terminal.
@@ -134,17 +125,16 @@ pub async fn read_mouse_event() -> napi::Result<MouseEventInfo> {
     // Check if stdin is a TTY
     if !atty::is(atty::Stream::Stdin) {
         return Err(napi::Error::from_reason(
-            "read_mouse_event requires a terminal (TTY).".to_string()
+            "read_mouse_event requires a terminal (TTY).".to_string(),
         ));
     }
 
     loop {
-        if event::poll(std::time::Duration::from_millis(100)).map_err(|e| {
-            napi::Error::from_reason(format!("Poll error: {}", e))
-        })? {
-            let event = event::read().map_err(|e| {
-                napi::Error::from_reason(format!("Read error: {}", e))
-            })?;
+        if event::poll(std::time::Duration::from_millis(100))
+            .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
+        {
+            let event = event::read()
+                .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?;
 
             if let Event::Mouse(mouse_event) = event {
                 return Ok(mouse_event_to_info(mouse_event));
@@ -176,7 +166,7 @@ pub async fn read_mouse_event_timeout(timeout_ms: u32) -> napi::Result<Option<Mo
     // Check if stdin is a TTY
     if !atty::is(atty::Stream::Stdin) {
         return Err(napi::Error::from_reason(
-            "read_mouse_event_timeout requires a terminal (TTY).".to_string()
+            "read_mouse_event_timeout requires a terminal (TTY).".to_string(),
         ));
     }
 
@@ -190,12 +180,11 @@ pub async fn read_mouse_event_timeout(timeout_ms: u32) -> napi::Result<Option<Mo
         }
 
         let remaining = timeout - elapsed;
-        if event::poll(remaining).map_err(|e| {
-            napi::Error::from_reason(format!("Poll error: {}", e))
-        })? {
-            let event = event::read().map_err(|e| {
-                napi::Error::from_reason(format!("Read error: {}", e))
-            })?;
+        if event::poll(remaining)
+            .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
+        {
+            let event = event::read()
+                .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?;
 
             if let Event::Mouse(mouse_event) = event {
                 return Ok(Some(mouse_event_to_info(mouse_event)));
@@ -222,11 +211,15 @@ pub async fn read_mouse_event_timeout(timeout_ms: u32) -> napi::Result<Option<Mo
 /// disable_mouse();
 /// ```
 #[napi]
-pub async fn wait_for_click_at(column: u16, row: u16, tolerance: Option<u16>) -> napi::Result<bool> {
+pub async fn wait_for_click_at(
+    column: u16,
+    row: u16,
+    tolerance: Option<u16>,
+) -> napi::Result<bool> {
     // Check if stdin is a TTY
     if !atty::is(atty::Stream::Stdin) {
         return Err(napi::Error::from_reason(
-            "wait_for_click_at requires a terminal (TTY).".to_string()
+            "wait_for_click_at requires a terminal (TTY).".to_string(),
         ));
     }
 
@@ -238,8 +231,8 @@ pub async fn wait_for_click_at(column: u16, row: u16, tolerance: Option<u16>) ->
         if event.event_type == "click" || event.event_type == "up" {
             let col_match = event.column >= column.saturating_sub(tol)
                 && event.column <= column.saturating_add(tol);
-            let row_match = event.row >= row.saturating_sub(tol)
-                && event.row <= row.saturating_add(tol);
+            let row_match =
+                event.row >= row.saturating_sub(tol) && event.row <= row.saturating_add(tol);
 
             if col_match && row_match {
                 return Ok(true);
@@ -277,7 +270,7 @@ pub async fn wait_for_click_in_region(
     // Check if stdin is a TTY
     if !atty::is(atty::Stream::Stdin) {
         return Err(napi::Error::from_reason(
-            "wait_for_click_in_region requires a terminal (TTY).".to_string()
+            "wait_for_click_in_region requires a terminal (TTY).".to_string(),
         ));
     }
 
@@ -320,7 +313,7 @@ impl MouseEventListener {
         // Check if stdin is a TTY
         if !atty::is(atty::Stream::Stdin) {
             return Err(napi::Error::from_reason(
-                "listen requires a terminal (TTY).".to_string()
+                "listen requires a terminal (TTY).".to_string(),
             ));
         }
 
@@ -365,9 +358,17 @@ pub fn is_mouse_supported() -> bool {
         // Most modern terminals support mouse events
         matches!(
             term.as_str(),
-            "xterm" | "xterm-256color" | "screen" | "screen-256color" |
-            "tmux" | "tmux-256color" | "rxvt" | "rxvt-unicode" |
-            "vt100" | "vt220" | "linux"
+            "xterm"
+                | "xterm-256color"
+                | "screen"
+                | "screen-256color"
+                | "tmux"
+                | "tmux-256color"
+                | "rxvt"
+                | "rxvt-unicode"
+                | "vt100"
+                | "vt220"
+                | "linux"
         )
     } else {
         false
@@ -385,7 +386,7 @@ pub fn get_mouse_position() -> napi::Result<(u16, u16)> {
     // This is a placeholder - getting mouse position requires
     // terminal-specific escape sequences and is not universally supported
     Err(napi::Error::from_reason(
-        "get_mouse_position is not implemented - terminal support varies".to_string()
+        "get_mouse_position is not implemented - terminal support varies".to_string(),
     ))
 }
 
@@ -405,21 +406,11 @@ fn mouse_event_to_info(event: MouseEvent) -> MouseEventInfo {
             let btn_str = mouse_button_to_string(&btn);
             ("drag".to_string(), btn_str)
         }
-        MouseEventKind::Moved => {
-            ("move".to_string(), "none".to_string())
-        }
-        MouseEventKind::ScrollDown => {
-            ("scrollDown".to_string(), "none".to_string())
-        }
-        MouseEventKind::ScrollUp => {
-            ("scrollUp".to_string(), "none".to_string())
-        }
-        MouseEventKind::ScrollLeft => {
-            ("scrollLeft".to_string(), "none".to_string())
-        }
-        MouseEventKind::ScrollRight => {
-            ("scrollRight".to_string(), "none".to_string())
-        }
+        MouseEventKind::Moved => ("move".to_string(), "none".to_string()),
+        MouseEventKind::ScrollDown => ("scrollDown".to_string(), "none".to_string()),
+        MouseEventKind::ScrollUp => ("scrollUp".to_string(), "none".to_string()),
+        MouseEventKind::ScrollLeft => ("scrollLeft".to_string(), "none".to_string()),
+        MouseEventKind::ScrollRight => ("scrollRight".to_string(), "none".to_string()),
     };
 
     MouseEventInfo {

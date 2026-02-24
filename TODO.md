@@ -113,16 +113,21 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ## Dependencies
 
-| Crate         | Purpose          | Status      |
-| ------------- | ---------------- | ----------- |
-| `tokio`       | Async runtime    | ✅ Added    |
-| `crossterm`   | Terminal control | ✅ Added    |
-| `colored`     | Color output     | ✅ Added    |
-| `napi`        | Node bindings    | ✅ Added    |
-| `libc`        | Unix syscalls    | ✅ Added    |
-| `errno`       | Error numbers    | ✅ Added    |
-| `windows-sys` | Windows APIs     | 🔲 Future   |
-| `which`       | Find executable  | 🔲 Optional |
+| Crate              | Purpose               | Status      |
+| ------------------ | --------------------- | ----------- |
+| `tokio`            | Async runtime         | ✅ Added    |
+| `crossterm`        | Terminal control      | ✅ Added    |
+| `colored`          | Color output          | ✅ Added    |
+| `napi`             | Node bindings         | ✅ Added    |
+| `libc`             | Unix syscalls         | ✅ Added    |
+| `errno`            | Error numbers         | ✅ Added    |
+| `regex`            | Pattern matching      | ✅ Added    |
+| `signal-hook`      | Unix signal handling  | ✅ Added    |
+| `signal-hook-tokio | Async signal handling | ✅ Added    |
+| `nix`              | Unix APIs             | ✅ Added    |
+| `winapi`           | Windows APIs          | ✅ Added    |
+| `windows-sys`      | Windows APIs          | 🔲 Future   |
+| `which`            | Find executable       | 🔲 Optional |
 
 ---
 
@@ -153,9 +158,51 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 - [x] Interactive menus
 - [x] Form inputs (✅ Complete)
 
+### v4.0.0 - Advanced Features (✅ Complete)
+
+- [x] Form inputs for interactive data collection
+- [x] Table rendering for terminal output
+- [x] Key event handling
+- [x] Mouse event support
+- [x] Performance benchmarks
+
+### v5.0.0 - Terminal Multiplexing & Signal Handling (✅ Complete)
+
+- [x] Terminal multiplexing support
+  - [x] TerminalMultiplexer class
+  - [x] Session, Window, Pane management
+  - [x] Full CRUD operations for sessions/windows/panes
+- [x] Cross-platform signal handling
+  - [x] SignalHandler class
+  - [x] send_signal, get_signal_info functions
+  - [x] Process group management
+- [x] API improvements
+  - [x] AsyncLineIterator for streaming
+  - [x] ProcessEventEmitter for event-driven process management
+  - [x] ProcessBuilder for fluent configuration
+
 ---
 
-## Next Phase: v4.0.0 - Advanced Features (✅ Complete)
+## Next Phase: v6.0.0 - Platform Enhancements
+
+### Windows-Specific APIs
+
+- [ ] Windows console API integration
+- [ ] Windows job objects for process management
+- [ ] Windows named pipes support
+
+### macOS-Specific APIs
+
+- [ ] macOS terminal integration
+- [ ] macOS keychain integration for secure storage
+
+### Advanced Features
+
+- [ ] Pseudo-terminal (PTY) support
+
+---
+
+## Completed: v4.0.0 - Advanced Features (✅ Complete)
 
 ### Advanced Features
 
@@ -192,7 +239,14 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
   - [x] wait_for_click_in_region - Wait for click in region
   - [x] MouseEventListener - Continuous mouse monitoring
   - [x] is_mouse_supported - Check mouse support
-- [ ] Terminal multiplexing support
+- [x] Terminal multiplexing support (✅ Complete)
+  - [x] TerminalMultiplexer class for session management
+  - [x] Session, Window, Pane management
+  - [x] create_session, list_sessions, attach_session, detach_session, kill_session
+  - [x] create_window, list_windows, kill_window, select_window, rename_window
+  - [x] split_pane, list_panes, kill_pane, select_pane, resize_pane
+  - [x] send_keys for pane input
+  - [x] is_multiplexing_supported check
 
 ### Performance (✅ Complete)
 
@@ -213,17 +267,36 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
   - [x] benchmark_hashmap_operations - HashMap operations
   - [x] run_benchmark_suite - Run all benchmarks
 
-### Platform Enhancements
+### Platform Enhancements (✅ Complete)
 
 - [ ] Add Windows-specific APIs
 - [ ] Add macOS-specific APIs
-- [ ] Cross-platform signal handling
+- [x] Cross-platform signal handling (✅ Complete)
+  - [x] SignalHandler class for receiving signals
+  - [x] send_signal - Send signals to processes
+  - [x] get_signal_info - Get signal information
+  - [x] on_interrupt - Register Ctrl+C handler
+  - [x] is_tty - Check if running in TTY
+  - [x] is_background - Check if process is in background
+  - [x] get_process_group - Get process group ID
+  - [x] set_process_group - Set process group ID
+  - [x] get_supported_signals - List supported signals
 
-### API Improvements
+### API Improvements (✅ Complete)
 
-- [ ] Async iterator support for ManagedProcess
-- [ ] Event emitter pattern for process events
-- [ ] Configuration builder pattern
+- [x] Async iterator support for ManagedProcess (✅ Complete)
+  - [x] AsyncLineIterator class
+  - [x] next, is_exhausted, collect, take, skip, filter methods
+- [x] Event emitter pattern for process events (✅ Complete)
+  - [x] ProcessEventEmitter class
+  - [x] on, once, off, remove_all_listeners, listener_count methods
+  - [x] ProcessEvent enum (Start, Stdout, Stderr, Exit, Error)
+- [x] Configuration builder pattern (✅ Complete)
+  - [x] ProcessBuilder class
+  - [x] arg, args, cwd, env, envs methods
+  - [x] capture_stdout, capture_stderr, capture_stdin methods
+  - [x] detached, shell, timeout methods
+  - [x] spawn, exec, to_string methods
 
 ### Documentation
 

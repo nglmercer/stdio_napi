@@ -210,7 +210,7 @@ pub async fn read_key_with_timeout(timeout_ms: u32) -> napi::Result<Option<Keybo
         ));
     }
 
-    let timeout = std::time::Duration::from_millis(timeout_ms);
+    let timeout = std::time::Duration::from_millis(timeout_ms as u64);
 
     // Try to poll with timeout
     match event::poll(timeout) {
@@ -386,17 +386,17 @@ pub async fn wait_for_shortcut(shortcut: String) -> napi::Result<bool> {
     }
 
     let parts: Vec<&str> = shortcut.split('+').collect();
-    let mut expected_mods: Vec<&str> = Vec::new();
-    let mut expected_key: Option<&str> = None;
+    let mut expected_mods: Vec<String> = Vec::new();
+    let mut expected_key: Option<String> = None;
 
     for part in &parts {
-        let p = part.trim();
-        match p.to_lowercase().as_str() {
-            "ctrl" | "control" => expected_mods.push("ctrl"),
-            "shift" => expected_mods.push("shift"),
-            "alt" => expected_mods.push("alt"),
-            "meta" | "cmd" | "command" | "super" => expected_mods.push("meta"),
-            k => expected_key = Some(k),
+        let p = part.trim().to_lowercase();
+        match p.as_str() {
+            "ctrl" | "control" => expected_mods.push("ctrl".to_string()),
+            "shift" => expected_mods.push("shift".to_string()),
+            "alt" => expected_mods.push("alt".to_string()),
+            "meta" | "cmd" | "command" | "super" => expected_mods.push("meta".to_string()),
+            k => expected_key = Some(k.to_string()),
         }
     }
 
@@ -419,7 +419,7 @@ pub async fn wait_for_shortcut(shortcut: String) -> napi::Result<bool> {
         }
 
         // Check if key matches
-        let key_match = expected_key.map_or(false, |k| {
+        let key_match = expected_key.as_ref().map_or(false, |k| {
             let lower_k = k.to_lowercase();
             key.code.to_lowercase() == lower_k || key.key.to_lowercase() == lower_k
         });

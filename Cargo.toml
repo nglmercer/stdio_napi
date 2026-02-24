@@ -27,6 +27,20 @@ colored = "2.1"
 libc = "0.2"
 errno = "0.3"
 atty = "0.2"
+regex = "1.10"
+
+[target.'cfg(unix)'.dependencies]
+futures-util = "0.3"
+signal-hook = "0.3"
+signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
+nix = { version = "0.29", features = ["signal", "process", "term"] }
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+  "wincon",
+  "processthreadsapi",
+  "handleapi",
+] }
 
 [dev-dependencies]
 
