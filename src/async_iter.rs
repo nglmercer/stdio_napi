@@ -5,6 +5,7 @@
 
 use napi_derive::napi;
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex, RwLock};
 
@@ -353,6 +354,20 @@ pub struct ProcessBuilder {
     timeout_ms: Option<u32>,
 }
 
+impl fmt::Display for ProcessBuilder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.command)?;
+        for arg in &self.args {
+            if arg.contains(' ') || arg.contains('"') {
+                write!(f, " \"{}\"", arg.replace('"', "\\\""))?;
+            } else {
+                write!(f, " {}", arg)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[napi]
 impl ProcessBuilder {
     #[napi(constructor)]
@@ -424,22 +439,6 @@ impl ProcessBuilder {
     #[napi]
     pub fn timeout(&mut self, timeout_ms: u32) {
         self.timeout_ms = Some(timeout_ms);
-    }
-
-    #[napi]
-    pub fn to_string(&self) -> String {
-        let mut cmd = self.command.clone();
-        for arg in &self.args {
-            cmd.push(' ');
-            if arg.contains(' ') || arg.contains('"') {
-                cmd.push('"');
-                cmd.push_str(&arg.replace('"', "\\\""));
-                cmd.push('"');
-            } else {
-                cmd.push_str(arg);
-            }
-        }
-        cmd
     }
 
     #[napi]
