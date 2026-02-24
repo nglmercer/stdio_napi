@@ -265,7 +265,7 @@ pub async fn read_multiline(delimiter: Option<String>) -> napi::Result<String> {
 
 #[napi]
 pub struct BufferedReader {
-    reader: BufReader<io::Stdin>,
+    reader: std::sync::Arc<tokio::sync::Mutex<BufReader<tokio::io::Stdin>>>,
 }
 
 #[napi]
@@ -273,14 +273,15 @@ impl BufferedReader {
     #[napi(constructor)]
     pub fn new() -> Self {
         Self {
-            reader: BufReader::new(tokio::io::stdin()),
+            reader: std::sync::Arc::new(tokio::sync::Mutex::new(BufReader::new(tokio::io::stdin()))),
         }
     }
 
     #[napi]
-    pub async fn read_line(&mut self) -> napi::Result<Option<String>> {
+    pub async fn read_line(&self) -> napi::Result<Option<String>> {
+        let mut reader = self.reader.lock().await;
         let mut line = String::new();
-        let bytes_read = self.reader.read_line(&mut line).await.map_err(|e| {
+        let bytes_read = reader.read_line(&mut line).await.map_err(|e| {
             napi::Error::from_reason(format!("Failed to read line: {}", e))
         })?;
         
@@ -292,14 +293,15 @@ impl BufferedReader {
     }
 
     #[napi]
-    pub async fn read_until(&mut self, delimiter: String) -> napi::Result<Option<String>> {
+    pub async fn read_until(&self, delimiter: String) -> napi::Result<Option<String>> {
+        let mut reader = self.reader.lock().await;
         let mut buffer = Vec::new();
         let delim_bytes = delimiter.as_bytes();
         if delim_bytes.is_empty() {
             return Err(napi::Error::from_reason("Delimiter cannot be empty".to_string()));
         }
         
-        let bytes_read = self.reader.read_until(delim_bytes[0], &mut buffer).await.map_err(|e| {
+        let bytes_read = reader.read_until(delim_bytes[0], &mut buffer).await.map_err(|e| {
             napi::Error::from_reason(format!("Failed to read until delimiter: {}", e))
         })?;
         
@@ -311,16 +313,18 @@ impl BufferedReader {
     }
 
     #[napi]
-    pub async fn next(&mut self) -> napi::Result<Option<String>> {
+    pub async fn next(&self) -> napi::Result<Option<String>> {
         self.read_line().await
     }
     
     /// Read with configurable buffer size
     #[napi]
-    pub async fn read(&mut self, size: Option<usize>) -> napi::Result<Option<String>> {
-        let mut buffer = vec![0u8; size.unwrap_or(8192)];
+    pub async fn read(&self, size: Option<u32>) -> napi::Result<Option<String>> {
+        let mut reader = self.reader.lock().await;
+        let buffer_size = size.unwrap_or(8192) as usize;
+        let mut buffer = vec![0u8; buffer_size];
         use tokio::io::AsyncReadExt;
-        let bytes_read = self.reader.read(&mut buffer).await.map_err(|e| {
+        let bytes_read = reader.read(&mut buffer).await.map_err(|e| {
             napi::Error::from_reason(format!("Failed to read: {}", e))
         })?;
         
@@ -330,5 +334,11 @@ impl BufferedReader {
         
         buffer.truncate(bytes_read);
         Ok(Some(String::from_utf8_lossy(&buffer).to_string()))
+    }
+}
+
+impl Default for BufferedReader {
+    fn default() -> Self {
+        Self::new()
     }
 }

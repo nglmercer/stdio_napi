@@ -78,16 +78,21 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ### Stream Handling (>>> Complete)
 
-- [x] **Stream Duplex**: Full-duplex stream for process communication (`StreamDuplex`)
-- [x] **Stream Events**: EventEmitter-like interface for stdout/stderr (broadcast channels)
+- [x] **Managed Process**: `ManagedProcess` class with streaming capabilities
 - [x] **Buffer Management**: Configurable buffer sizes (`BufferConfig`)
-- [x] **Backpressure**: Handle backpressure in streams (pause/resume write/read)
+- [x] **Process Events**: Stream events for stdout/stderr/exit
 
 ### Error Handling & Type Definitions (>>> Complete)
 
 - [x] **Custom Error Types**: Add custom error types for better error messages (`StdioError` enum)
 - [x] **Input Validation**: Validate parameters before processing (validation module)
 - [ ] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
+
+### Documentation & Testing (>>> In Progress)
+
+- [>>>] **Documentation Comments**: Add rustdoc comments to all public functions
+- [ ] **Integration Tests**: Add tests for all stdio functions
+- [ ] **Performance Benchmarks**: Add performance benchmarks
 
 ---
 
