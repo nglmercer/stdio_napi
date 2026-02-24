@@ -559,4 +559,262 @@ mod tests {
         assert!(stderr_tty == true || stderr_tty == false);
         assert!(stdin_tty == true || stdin_tty == false);
     }
+
+    #[test]
+    fn test_set_cursor_shape_block() {
+        let result = set_cursor_shape(CursorShape::Block);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_cursor_shape_blinking_block() {
+        let result = set_cursor_shape(CursorShape::BlinkingBlock);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_cursor_shape_underline() {
+        let result = set_cursor_shape(CursorShape::Underline);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_cursor_shape_blinking_underline() {
+        let result = set_cursor_shape(CursorShape::BlinkingUnderline);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_cursor_shape_bar() {
+        let result = set_cursor_shape(CursorShape::Bar);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_cursor_shape_blinking_bar() {
+        let result = set_cursor_shape(CursorShape::BlinkingBar);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_terminal_title() {
+        let result = set_terminal_title("Test Title".to_string());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_terminal_title_empty() {
+        let result = set_terminal_title("".to_string());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_terminal_title_unicode() {
+        let result = set_terminal_title("测试标题 🎉".to_string());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_terminal_title_long() {
+        let long_title = "x".repeat(1000);
+        let result = set_terminal_title(long_title);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_zero() {
+        let result = move_cursor(0, 0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_basic() {
+        let result = move_cursor(10, 5);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_max_values() {
+        let result = move_cursor(u16::MAX, u16::MAX);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_up_basic() {
+        let result = move_cursor_up(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_up_zero() {
+        let result = move_cursor_up(0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_up_max() {
+        let result = move_cursor_up(u16::MAX);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_down_basic() {
+        let result = move_cursor_down(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_down_zero() {
+        let result = move_cursor_down(0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_left_basic() {
+        let result = move_cursor_left(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_right_basic() {
+        let result = move_cursor_right(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_next_line() {
+        let result = move_cursor_next_line(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_previous_line() {
+        let result = move_cursor_previous_line(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_to_column() {
+        let result = move_cursor_to_column(10);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_move_cursor_to_row() {
+        let result = move_cursor_to_row(5);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_show_cursor() {
+        let result = show_cursor();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_hide_cursor() {
+        let result = hide_cursor();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_save_restore_cursor_position() {
+        let save_result = save_cursor_position();
+        assert!(save_result.is_ok());
+        
+        let restore_result = restore_cursor_position();
+        assert!(restore_result.is_ok());
+    }
+
+    #[test]
+    fn test_scroll_up_basic() {
+        let result = scroll_up(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_scroll_up_zero() {
+        let result = scroll_up(0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_scroll_down_basic() {
+        let result = scroll_down(1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_scroll_down_zero() {
+        let result = scroll_down(0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_clear_current_line() {
+        let result = clear_current_line();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_clear_until_newline() {
+        let result = clear_until_newline();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_clear_from_cursor() {
+        let result = clear_from_cursor();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_scroll_region() {
+        let result = set_scroll_region(0, 10);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_set_scroll_region_same_top_bottom() {
+        let result = set_scroll_region(5, 5);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_terminal_size_struct() {
+        // Test that TerminalSize struct can be created
+        let size = TerminalSize {
+            columns: 80,
+            rows: 24,
+        };
+        assert_eq!(size.columns, 80);
+        assert_eq!(size.rows, 24);
+    }
+
+    #[test]
+    fn test_terminal_info_struct() {
+        // Test that TerminalInfo struct can be created
+        let info = TerminalInfo {
+            terminal_type: "xterm-256color".to_string(),
+            color_support: "256color".to_string(),
+        };
+        assert_eq!(info.terminal_type, "xterm-256color");
+        assert_eq!(info.color_support, "256color");
+    }
+
+    #[test]
+    fn test_set_scroll_region_command_ansi() {
+        let cmd = SetScrollRegion { top: 0, bottom: 10 };
+        let mut output = String::new();
+        cmd.write_ansi(&mut output).unwrap();
+        assert_eq!(output, "\x1b[1;11r");
+    }
+
+    #[test]
+    fn test_set_scroll_region_command_ansi_non_zero() {
+        let cmd = SetScrollRegion { top: 5, bottom: 20 };
+        let mut output = String::new();
+        cmd.write_ansi(&mut output).unwrap();
+        assert_eq!(output, "\x1b[6;21r");
+    }
 }

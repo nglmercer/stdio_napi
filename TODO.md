@@ -146,7 +146,7 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 - [x] Alternate screen
 - [x] Advanced cursor control
 
-### v3.0.0 - Interactive UI (In Progress)
+### v3.0.0 - Interactive UI (✅ Complete)
 
 - [x] Progress bars
 - [x] Spinners
@@ -155,7 +155,33 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ---
 
-## Next Phase: Documentation & Unit Tests (>>> In Progress)
+## Next Phase: v4.0.0 - Advanced Features (>>> In Progress)
+
+### Advanced Features
+
+- [ ] Form inputs for interactive data collection
+- [ ] Table rendering for terminal output
+- [ ] Key event handling (keyboard shortcuts)
+- [ ] Mouse event support
+- [ ] Terminal multiplexing support
+
+### Performance
+
+- [ ] Add benchmarks for stdio operations
+- [ ] Add benchmarks for terminal operations
+- [ ] Add benchmarks for process spawning
+
+### Platform Enhancements
+
+- [ ] Add Windows-specific APIs
+- [ ] Add macOS-specific APIs
+- [ ] Cross-platform signal handling
+
+### API Improvements
+
+- [ ] Async iterator support for ManagedProcess
+- [ ] Event emitter pattern for process events
+- [ ] Configuration builder pattern
 
 ### Documentation
 
@@ -168,14 +194,14 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ### Unit Tests (Rust)
 
-- [-] Add unit tests for `stdio.rs` functions
-- [ ] Add unit tests for `terminal.rs` functions
-- [ ] Add unit tests for process spawning
-- [ ] Add edge case tests (empty input, large input, unicode)
+- [x] Add unit tests for `stdio.rs` functions
+- [x] Add unit tests for `terminal.rs` functions
+- [x] Add unit tests for process spawning
+- [x] Add edge case tests (empty input, large input, unicode)
 
 ### Integration Tests (TypeScript)
 
-- [ ] Add tests for all stdio functions
-- [ ] Add tests for terminal functions
-- [ ] Add tests for process spawning
-- [ ] Add performance benchmarks
+- [x] Add tests for all stdio functions
+- [x] Add tests for terminal functions
+- [x] Add tests for process spawning
+- [x] Add performance benchmarks (via edge case tests)
