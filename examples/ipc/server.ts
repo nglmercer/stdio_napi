@@ -133,20 +133,20 @@ const commands: Record<string, (cmd: IPCCommand) => IPCResponse | Promise<IPCRes
   },
 
   // Show help
-  help: () => ({
-    status: "ok",
-    data: `Available commands:
+  help: () => {
+    const msg = `Available commands:
   ping              - Returns "pong"
-  echo <args>      - Echo back arguments  
+  echo <args>       - Echo back arguments  
   exec <cmd> [args] - Execute a command
-  version          - Get stdio-napi version
-  env [vars]       - Get environment variables
-  sleep <ms>       - Sleep for milliseconds
-  send <msg>       - Send message to stdout
-  receive          - Receive input from stdin
-  help             - Show this help
-  exit             - Exit the server`,
-  }),
+  version           - Get stdio-napi version
+  env [vars]        - Get environment variables
+  sleep <ms>        - Sleep for milliseconds
+  send <msg>        - Send message to stdout
+  receive           - Receive input from stdin
+  help              - Show this help
+  exit              - Exit the server`;
+    return { status: "ok" as const, data: msg };
+  }
 };
 
 // Process single command
@@ -224,11 +224,18 @@ async function interactiveMode(): Promise<void> {
 
       const response = processCommand(line);
       
+      let responseObj: IPCResponse;
       if (response instanceof Promise) {
-        const resolved = await response;
-        console.log(JSON.stringify(resolved, null, 2));
+        responseObj = await response;
       } else {
-        console.log(JSON.stringify(response, null, 2));
+        responseObj = response;
+      }
+      
+      // If response has data and status is ok, print data directly for better formatting
+      if (responseObj.status === "ok" && responseObj.data) {
+        printInfo(responseObj.data);
+      } else {
+        printInfo(JSON.stringify(responseObj, null, 2));
       }
     } catch (e) {
       printError(`Error: ${e}`);
