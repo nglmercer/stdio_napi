@@ -534,6 +534,185 @@ impl Default for BufferedReader {
 mod tests {
     use super::*;
 
+    /// Test that get_spinner_frame returns correct frames for indices 0-9
+    #[test]
+    fn test_get_spinner_frame_all_frames() {
+        let expected_frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        
+        for (i, expected) in expected_frames.iter().enumerate() {
+            let frame = get_spinner_frame(i as u32);
+            assert_eq!(frame, *expected, "Frame {} should be {}", i, expected);
+        }
+    }
+
+    /// Test that get_spinner_frame wraps around correctly
+    #[test]
+    fn test_get_spinner_frame_wrap_around() {
+        // Frame 10 should equal frame 0
+        assert_eq!(get_spinner_frame(0), get_spinner_frame(10));
+        // Frame 11 should equal frame 1
+        assert_eq!(get_spinner_frame(1), get_spinner_frame(11));
+        // Frame 20 should equal frame 0
+        assert_eq!(get_spinner_frame(0), get_spinner_frame(20));
+    }
+
+    /// Test that get_spinner_frame handles large frame numbers
+    #[test]
+    fn test_get_spinner_frame_large_numbers() {
+        // 100 % 10 = 0
+        assert_eq!(get_spinner_frame(100), get_spinner_frame(0));
+        // 123 % 10 = 3
+        assert_eq!(get_spinner_frame(123), get_spinner_frame(3));
+        // 1000 % 10 = 0
+        assert_eq!(get_spinner_frame(1000), get_spinner_frame(0));
+    }
+
+    /// Test print_progress with basic inputs
+    #[test]
+    fn test_print_progress_basic() {
+        // This test verifies the function doesn't panic
+        print_progress(50, 100, Some(20));
+        print_progress(0, 100, Some(20));
+        print_progress(100, 100, Some(20));
+    }
+
+    /// Test print_progress with default width
+    #[test]
+    fn test_print_progress_default_width() {
+        // Should use default width of 20
+        print_progress(50, 100, None);
+    }
+
+    /// Test print_progress edge cases
+    #[test]
+    fn test_print_progress_edge_cases() {
+        // Zero progress
+        print_progress(0, 100, Some(10));
+        
+        // Full progress
+        print_progress(100, 100, Some(10));
+        
+        // Progress exceeds total (should cap at 100%)
+        print_progress(150, 100, Some(10));
+        
+        // Small total
+        print_progress(1, 2, Some(10));
+    }
+
+    /// Test print_progress with various widths
+    #[test]
+    fn test_print_progress_various_widths() {
+        print_progress(50, 100, Some(10));
+        print_progress(50, 100, Some(30));
+        print_progress(50, 100, Some(50));
+    }
+
+    /// Test print_stdout doesn't panic with various inputs
+    #[test]
+    fn test_print_stdout() {
+        print_stdout("Hello, World!".to_string());
+        print_stdout("".to_string());
+        print_stdout("Unicode: 你好世界 🌍".to_string());
+        print_stdout("Numbers: 12345".to_string());
+    }
+
+    /// Test print_stderr doesn't panic with various inputs
+    #[test]
+    fn test_print_stderr() {
+        print_stderr("Error message".to_string());
+        print_stderr("".to_string());
+        print_stderr("Unicode error: 错误 ❌".to_string());
+    }
+
+    /// Test print_success doesn't panic
+    #[test]
+    fn test_print_success() {
+        print_success("Operation successful".to_string());
+        print_success("".to_string());
+    }
+
+    /// Test print_error doesn't panic
+    #[test]
+    fn test_print_error() {
+        print_error("An error occurred".to_string());
+        print_error("".to_string());
+    }
+
+    /// Test print_warning doesn't panic
+    #[test]
+    fn test_print_warning() {
+        print_warning("This is a warning".to_string());
+        print_warning("".to_string());
+    }
+
+    /// Test print_info doesn't panic
+    #[test]
+    fn test_print_info() {
+        print_info("Information message".to_string());
+        print_info("".to_string());
+    }
+
+    /// Test BufferedReader creation and default
+    #[test]
+    fn test_buffered_reader_new() {
+        let reader = BufferedReader::new();
+        let _default_reader = BufferedReader::default();
+        // Just verify they can be created
+        assert!(true);
+    }
+
+    /// Test with empty string inputs
+    #[test]
+    fn test_empty_string_inputs() {
+        print_stdout("".to_string());
+        print_stderr("".to_string());
+        print_success("".to_string());
+        print_error("".to_string());
+        print_warning("".to_string());
+        print_info("".to_string());
+    }
+
+    /// Test with unicode inputs
+    #[test]
+    fn test_unicode_inputs() {
+        let unicode_text = "你好世界 Hello World 🌍🎉✨";
+        print_stdout(unicode_text.to_string());
+        print_stderr(unicode_text.to_string());
+        print_success(unicode_text.to_string());
+        print_error(unicode_text.to_string());
+        print_warning(unicode_text.to_string());
+        print_info(unicode_text.to_string());
+    }
+
+    /// Test with large inputs
+    #[test]
+    fn test_large_inputs() {
+        let large_text = "x".repeat(10000);
+        print_stdout(large_text.clone());
+        print_stderr(large_text.clone());
+        print_progress(5000, 10000, Some(50));
+    }
+
+    /// Test with special characters
+    #[test]
+    fn test_special_characters() {
+        let special_chars = "Tab:\t Newline:\n Carriage:\r Quotes:\"' Backslash:\\";
+        print_stdout(special_chars.to_string());
+        print_stderr(special_chars.to_string());
+    }
+
+    /// Test with ANSI escape sequences (should pass through)
+    #[test]
+    fn test_ansi_sequences() {
+        let ansi_text = "\x1b[31mRed Text\x1b[0m \x1b[1mBold\x1b[0m";
+        print_stdout(ansi_text.to_string());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
     fn test_get_spinner_frame() {
         let frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];

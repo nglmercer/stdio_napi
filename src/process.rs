@@ -572,3 +572,78 @@ pub async fn write_process_stdin(_pid: u32, _input: String) -> napi::Result<()> 
         "Use spawn_with_pipes and write to the Child's stdin directly.".to_string()
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_shell_escape_empty() {
+        let result = shell_escape("".to_string());
+        assert_eq!(result, "''");
+    }
+
+    #[test]
+    fn test_shell_escape_simple() {
+        let result = shell_escape("hello".to_string());
+        assert_eq!(result, "'hello'");
+    }
+
+    #[test]
+    fn test_shell_escape_with_spaces() {
+        let result = shell_escape("hello world".to_string());
+        assert_eq!(result, "'hello world'");
+    }
+
+    #[test]
+    fn test_shell_escape_with_quotes() {
+        let result = shell_escape("hello'world".to_string());
+        assert!(result.contains("'hello'"));
+        assert!(result.contains("\\'"));
+        assert!(result.contains("world'"));
+    }
+
+    #[test]
+    fn test_shell_escape_args_empty() {
+        let result: Vec<String> = shell_escape_args(vec![]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_shell_escape_args_single() {
+        let result = shell_escape_args(vec!["hello".to_string()]);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "'hello'");
+    }
+
+    #[test]
+    fn test_shell_escape_args_multiple() {
+        let result = shell_escape_args(vec![
+            "hello".to_string(),
+            "world".to_string(),
+            "test".to_string()
+        ]);
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn test_buffer_config_default() {
+        let config = BufferConfig::default();
+        assert_eq!(config.read_size, Some(8192));
+        assert_eq!(config.write_size, Some(8192));
+        assert_eq!(config.max_size, Some(65536));
+    }
+
+    #[test]
+    fn test_process_status_clone() {
+        let status = ProcessStatus {
+            pid: 123,
+            success: true,
+            code: Some(0),
+        };
+        let cloned = status.clone();
+        assert_eq!(cloned.pid, status.pid);
+        assert_eq!(cloned.success, status.success);
+        assert_eq!(cloned.code, status.code);
+    }
+}
