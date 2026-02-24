@@ -118,11 +118,7 @@ pub fn open_pty(config: Option<PtyConfig>) -> napi::Result<PtyProcessInfo> {
                 if ptr.is_null() {
                     None
                 } else {
-                    Some(
-                        std::ffi::CStr::from_ptr(ptr)
-                            .to_string_lossy()
-                            .into_owned(),
-                    )
+                    Some(std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned())
                 }
             }
         };
@@ -293,7 +289,9 @@ pub fn get_pty_name(fd: u32) -> napi::Result<String> {
             {
                 let ptr = libc::ptsname(fd as libc::c_int);
                 if ptr.is_null() {
-                    Err(napi::Error::from_reason("Failed to get PTY name".to_string()))
+                    Err(napi::Error::from_reason(
+                        "Failed to get PTY name".to_string(),
+                    ))
                 } else {
                     Ok(std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned())
                 }
