@@ -5,7 +5,6 @@
 
 use colored::*;
 use napi_derive::napi;
-use std::io::{self, Write};
 
 /// Table border style options
 #[derive(PartialEq)]
@@ -516,10 +515,13 @@ struct BorderChars {
     bottom_right: char,
     horizontal: char,
     vertical: char,
+    #[allow(dead_code)]
     left_tee: char,
+    #[allow(dead_code)]
     right_tee: char,
     top_tee: char,
     bottom_tee: char,
+    #[allow(dead_code)]
     cross: char,
 }
 
@@ -647,7 +649,7 @@ fn render_horizontal_border(
 
 fn format_cell(content: &str, width: usize, align: ColumnAlign, padding: usize) -> String {
     let content_width = content.len();
-    let available = if content_width > width { width } else { width };
+    let available = width;
 
     let (left_pad, right_pad) = match align {
         ColumnAlign::Left => (0, available.saturating_sub(content_width)),

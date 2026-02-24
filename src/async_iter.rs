@@ -324,6 +324,12 @@ impl AsyncLineIterator {
         let lines = self.lines.lock().await;
         lines.len() as u32
     }
+
+    #[napi]
+    pub async fn is_empty(&self) -> bool {
+        let lines = self.lines.lock().await;
+        lines.is_empty()
+    }
 }
 
 impl Default for AsyncLineIterator {
@@ -421,7 +427,7 @@ impl ProcessBuilder {
     }
 
     #[napi]
-    pub fn to_string(&self) -> String {
+    pub fn to_command_string(&self) -> String {
         let mut cmd = self.command.clone();
         for arg in &self.args {
             cmd.push(' ');

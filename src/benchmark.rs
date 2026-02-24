@@ -331,16 +331,16 @@ pub fn run_benchmark_suite(iterations: Option<u32>) -> napi::Result<BenchmarkSui
     let iters = iterations.unwrap_or(1000);
     let suite_start = Instant::now();
 
-    let mut results = Vec::new();
-
     // Run all benchmarks
-    results.push(benchmark_string_format(Some(iters * 10))?);
-    results.push(benchmark_spinner(Some(iters * 10))?);
-    results.push(benchmark_progress_bar(Some(iters))?);
-    results.push(benchmark_table_render(Some(iters / 10), Some(10), Some(5))?);
-    results.push(benchmark_terminal_size(Some(iters))?);
-    results.push(benchmark_shell_escape(Some(iters * 10))?);
-    results.push(benchmark_key_parsing(Some(iters * 10))?);
+    let results = vec![
+        benchmark_string_format(Some(iters * 10))?,
+        benchmark_spinner(Some(iters * 10))?,
+        benchmark_progress_bar(Some(iters))?,
+        benchmark_table_render(Some(iters / 10), Some(10), Some(5))?,
+        benchmark_terminal_size(Some(iters))?,
+        benchmark_shell_escape(Some(iters * 10))?,
+        benchmark_key_parsing(Some(iters * 10))?,
+    ];
 
     // Note: print benchmark is optional as it produces output
     // results.push(benchmark_print(Some(iters))?);

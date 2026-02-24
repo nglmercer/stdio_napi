@@ -5,10 +5,10 @@
 
 use crossterm::{
     event::{self, Event, MouseButton, MouseEvent, MouseEventKind},
-    execute, terminal,
+    execute,
 };
 use napi_derive::napi;
-use std::io::{stdout, Write};
+use std::io::stdout;
 
 /// Mouse button types
 #[napi]
@@ -445,7 +445,7 @@ mod tests {
 
     #[test]
     fn test_mouse_event_listener_creation() {
-        let listener = MouseEventListener::new();
+        let _listener = MouseEventListener::new();
         // Should be able to create without error
         assert!(true);
     }

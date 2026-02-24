@@ -486,7 +486,7 @@ pub fn move_cursor_to_row(row: u16) -> napi::Result<()> {
 
 /// Check if stdout is connected to a terminal (TTY)
 #[napi]
-pub fn is_tty() -> bool {
+pub fn is_stdout_tty() -> bool {
     atty::is(atty::Stream::Stdout)
 }
 
@@ -526,7 +526,7 @@ mod tests {
 
     #[test]
     fn test_tty_functions_return_bool() {
-        let stdout_tty = is_tty();
+        let stdout_tty = is_stdin_tty();
         let stderr_tty = is_stderr_tty();
         let stdin_tty = is_stdin_tty();
 

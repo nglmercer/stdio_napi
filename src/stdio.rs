@@ -672,7 +672,7 @@ mod tests {
     /// Test BufferedReader creation and default
     #[test]
     fn test_buffered_reader_new() {
-        let reader = BufferedReader::new();
+        let _reader = BufferedReader::new();
         let _default_reader = BufferedReader::default();
         // Just verify they can be created
         assert!(true);

@@ -521,8 +521,7 @@ pub async fn form_multi_select_input(config: FormFieldConfig) -> napi::Result<Fo
                 let checkbox = if selected[i] { "[x]" } else { "[ ]" };
                 if i == selected_idx {
                     println!(
-                        " {} {} {}",
-                        ">",
+                        " > {} {}",
                         checkbox.green().bold(),
                         opt.green().bold()
                     );
@@ -568,7 +567,7 @@ pub async fn form_multi_select_input(config: FormFieldConfig) -> napi::Result<Fo
                         let checkbox = if selected[i] { "[x]" } else { "[ ]" };
                         if i == selected_idx {
                             println!(
-                                " {} {} {}",
+                                " > {} {}",
                                 ">",
                                 checkbox.green().bold(),
                                 opt.green().bold()

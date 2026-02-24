@@ -250,12 +250,12 @@ pub fn get_signal_info(signal: String) -> napi::Result<SignalInfo> {
     }
 }
 
-/// Check if the current process is running in a TTY.
+/// Check if the current process has a TTY stdin.
 ///
 /// # Returns
 /// * `bool` - True if stdin is connected to a TTY
 #[napi]
-pub fn is_tty() -> bool {
+pub fn is_stdin_tty_signal() -> bool {
     use std::io::IsTerminal;
     std::io::stdin().is_terminal()
 }
