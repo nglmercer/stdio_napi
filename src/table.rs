@@ -648,14 +648,16 @@ fn render_horizontal_border(
 }
 
 fn format_cell(content: &str, width: usize, align: ColumnAlign, padding: usize) -> String {
-    let content_width = content.len();
+    // Strip ANSI escape codes to get the actual visible text length
+    let visible_text = strip_ansi_escapes(content);
+    let visible_width = visible_text.len();
     let available = width;
 
     let (left_pad, right_pad) = match align {
-        ColumnAlign::Left => (0, available.saturating_sub(content_width)),
-        ColumnAlign::Right => (available.saturating_sub(content_width), 0),
+        ColumnAlign::Left => (0, available.saturating_sub(visible_width)),
+        ColumnAlign::Right => (available.saturating_sub(visible_width), 0),
         ColumnAlign::Center => {
-            let diff = available.saturating_sub(content_width);
+            let diff = available.saturating_sub(visible_width);
             (diff / 2, diff - diff / 2)
         }
     };
@@ -664,10 +666,32 @@ fn format_cell(content: &str, width: usize, align: ColumnAlign, padding: usize) 
     let left = " ".repeat(left_pad);
     let right = " ".repeat(right_pad);
 
-    // Truncate if too long
-    let display_content = if content_width > width {
-        let mut truncated = content.chars().take(width - 3).collect::<String>();
-        truncated.push_str("...");
+    // Truncate if the visible content is too long
+    let display_content = if visible_width > width {
+        // Find where to truncate considering ANSI codes
+        let mut truncated = String::new();
+        let mut visible_count = 0;
+        let mut chars = content.chars().peekable();
+        
+        while let Some(c) = chars.next() {
+            if c == '\x1b' {
+                // Handle ANSI escape sequence
+                truncated.push(c);
+                while let Some(&next_c) = chars.peek() {
+                    truncated.push(chars.next().unwrap());
+                    if next_c.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            } else {
+                if visible_count >= width - 3 {
+                    truncated.push_str("...");
+                    break;
+                }
+                truncated.push(c);
+                visible_count += 1;
+            }
+        }
         truncated
     } else {
         content.to_string()
@@ -677,6 +701,27 @@ fn format_cell(content: &str, width: usize, align: ColumnAlign, padding: usize) 
         "{}{}{}{}{}",
         cell_padding, left, display_content, right, cell_padding
     )
+}
+
+fn strip_ansi_escapes(text: &str) -> String {
+    let mut result = String::new();
+    let mut chars = text.chars().peekable();
+    
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            // Skip ANSI escape sequence
+            while let Some(&next_c) = chars.peek() {
+                chars.next();
+                if next_c.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    
+    result
 }
 
 fn apply_color(
@@ -773,6 +818,9 @@ mod tests {
         )
         .unwrap();
 
+        println!("Table output: '{}'", table);
+        println!("Table bytes: {:?}", table.as_bytes());
+        
         assert!(table.contains("Name"));
         assert!(table.contains("Age"));
         assert!(table.contains("Alice"));
