@@ -19,6 +19,12 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 - [x] **Stderr Wrapper**: `print_stderr(text: String)` - Write to stderr from Rust
 - [x] **Stdin Reader**: `read_line()` - Asynchronous reader for stdin
 - [x] **Prompt Interface**: `prompt(message: String)` - Interactive input prompts
+- [x] **Confirm Dialog**: `confirm(message: String, default: Option<bool>)` - Yes/No confirmation
+- [x] **Read Password**: `read_password(mask: Option<String>)` - Masked password input
+- [x] **Select Menu**: `select_menu(message: String, options: Vec<String>)` - Interactive selection
+- [x] **Read Multi-line**: `read_multiline(delimiter: Option<String>)` - Multi-line input
+- [x] **Progress Bar**: `print_progress(current: u32, total: u32, width: Option<u32>)` - Progress display
+- [x] **Spinner Frame**: `get_spinner_frame(frame: u32)` - Get spinner animation frame
 
 #### Color Support (`src/stdio.rs`)
 
@@ -65,23 +71,23 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ## Features to Implement
 
-### Advanced Stdio Features (>>> In Progress)
+### Advanced Stdio Features (>>> Complete)
 
-- [>>>] **Buffered Reader**: `BufferedReader` class for efficient reading
-- [>>>] **Line Iterator**: Async iterator for reading lines
-- [>>>] **Progress Bar**: Built-in progress bar utilities
-- [>>>] **Spinner**: Loading spinner animation
-- [>>>] **Multi-line Input**: Read multiple lines until delimiter
-- [>>>] **Password Input**: Masked password input
-- [>>>] **Select Menu**: Interactive selection menu
-- [>>>] **Confirm Dialog**: Yes/No confirmation with default
+- [x] **Buffered Reader**: `BufferedReader` class for efficient reading
+- [x] **Line Iterator**: Async iterator for reading lines
 
-### Stream Handling
+### Stream Handling (>>> Complete)
 
-- [ ] **Stream Duplex**: Full-duplex stream for process communication
-- [ ] **Stream Events**: EventEmitter-like interface for stdout/stderr
-- [ ] **Buffer Management**: Configurable buffer sizes
-- [ ] **Backpressure**: Handle backpressure in streams
+- [x] **Stream Duplex**: Full-duplex stream for process communication (`StreamDuplex`)
+- [x] **Stream Events**: EventEmitter-like interface for stdout/stderr (broadcast channels)
+- [x] **Buffer Management**: Configurable buffer sizes (`BufferConfig`)
+- [x] **Backpressure**: Handle backpressure in streams (pause/resume write/read)
+
+### Error Handling & Type Definitions (>>> Complete)
+
+- [x] **Custom Error Types**: Add custom error types for better error messages (`StdioError` enum)
+- [x] **Input Validation**: Validate parameters before processing (validation module)
+- [ ] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
 
 ---
 
@@ -94,10 +100,8 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ### Improvements
 
-- [ ] **Error Handling**: Add custom error types for better error messages
 - [ ] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
 - [ ] **Documentation Comments**: Add rustdoc comments to all public functions
-- [ ] **Input Validation**: Validate parameters before processing
 - [ ] **Graceful Degradation**: Handle missing TTY gracefully
 
 ---
@@ -169,7 +173,7 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ### v3.0.0 - Interactive UI
 
-- Progress bars
-- Spinners
-- Interactive menus
-- Form inputs
+- [x] Progress bars
+- [x] Spinners
+- [x] Interactive menus
+- [ ] Form inputs

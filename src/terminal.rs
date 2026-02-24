@@ -186,3 +186,141 @@ pub fn reset_scroll_region() -> napi::Result<()> {
         napi::Error::from_reason(format!("Failed to reset scroll region: {}", e))
     })
 }
+
+/// Scroll the screen up by n lines
+#[napi]
+pub fn scroll_up(n: u16) -> napi::Result<()> {
+    execute!(stdout(), terminal::ScrollUp(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to scroll up: {}", e))
+    })
+}
+
+/// Scroll the screen down by n lines
+#[napi]
+pub fn scroll_down(n: u16) -> napi::Result<()> {
+    execute!(stdout(), terminal::ScrollDown(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to scroll down: {}", e))
+    })
+}
+
+/// Clear the current line
+#[napi]
+pub fn clear_current_line() -> napi::Result<()> {
+    execute!(stdout(), terminal::Clear(terminal::ClearType::CurrentLine)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to clear current line: {}", e))
+    })
+}
+
+/// Clear from cursor to end of line
+#[napi]
+pub fn clear_until_newline() -> napi::Result<()> {
+    execute!(stdout(), terminal::Clear(terminal::ClearType::UntilNewLine)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to clear until newline: {}", e))
+    })
+}
+
+/// Clear from cursor to beginning of line
+#[napi]
+pub fn clear_from_cursor() -> napi::Result<()> {
+    execute!(stdout(), terminal::Clear(terminal::ClearType::FromCursorUp)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to clear from cursor: {}", e))
+    })
+}
+
+/// Save the current cursor position
+#[napi]
+pub fn save_cursor_position() -> napi::Result<()> {
+    execute!(stdout(), cursor::SavePosition).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to save cursor position: {}", e))
+    })
+}
+
+/// Restore the saved cursor position
+#[napi]
+pub fn restore_cursor_position() -> napi::Result<()> {
+    execute!(stdout(), cursor::RestorePosition).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to restore cursor position: {}", e))
+    })
+}
+
+/// Move cursor up by n rows
+#[napi]
+pub fn move_cursor_up(n: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveUp(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor up: {}", e))
+    })
+}
+
+/// Move cursor down by n rows
+#[napi]
+pub fn move_cursor_down(n: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveDown(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor down: {}", e))
+    })
+}
+
+/// Move cursor left by n columns
+#[napi]
+pub fn move_cursor_left(n: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveLeft(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor left: {}", e))
+    })
+}
+
+/// Move cursor right by n columns
+#[napi]
+pub fn move_cursor_right(n: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveRight(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor right: {}", e))
+    })
+}
+
+/// Move cursor to the beginning of the next line (column 0)
+#[napi]
+pub fn move_cursor_next_line(n: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveToNextLine(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor to next line: {}", e))
+    })
+}
+
+/// Move cursor to the beginning of the previous line (column 0)
+#[napi]
+pub fn move_cursor_previous_line(n: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveToPreviousLine(n)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor to previous line: {}", e))
+    })
+}
+
+/// Move cursor to a specific column on the current row
+#[napi]
+pub fn move_cursor_to_column(column: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveToColumn(column)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor to column: {}", e))
+    })
+}
+
+/// Move cursor to a specific row at column 0
+#[napi]
+pub fn move_cursor_to_row(row: u16) -> napi::Result<()> {
+    execute!(stdout(), cursor::MoveToRow(row)).map_err(|e| {
+        napi::Error::from_reason(format!("Failed to move cursor to row: {}", e))
+    })
+}
+
+/// Check if stdout is connected to a terminal (TTY)
+#[napi]
+pub fn is_tty() -> bool {
+    atty::is(atty::Stream::Stdout)
+}
+
+/// Check if stderr is connected to a terminal (TTY)
+#[napi]
+pub fn is_stderr_tty() -> bool {
+    atty::is(atty::Stream::Stderr)
+}
+
+/// Check if stdin is connected to a terminal (TTY)
+#[napi]
+pub fn is_stdin_tty() -> bool {
+    atty::is(atty::Stream::Stdin)
+}
