@@ -334,11 +334,13 @@ describe("ProcessEventEmitter Tests", () => {
 describe("Process Type Export Tests", () => {
   test("ProcessOutput type should be exported", () => {
     const output: ProcessOutput = {
+      pid: 123,
       stdout: "test",
       stderr: "",
       success: true,
     };
     expect(output.stdout).toBe("test");
+    expect(output.pid).toBe(123);
   });
 
   test("ProcessStatus type should be exported", () => {

@@ -150,7 +150,7 @@ pub async fn prompt(message: String) -> napi::Result<String> {
 ///
 /// # Arguments
 /// * `message` - The confirmation message to display
-/// * `default` - Optional default value (true for yes, false for no)
+/// * `value` - Optional default value (true for yes, false for no)
 ///
 /// # Returns
 /// * `Result<bool, napi::Error>` - true for yes, false for no
@@ -161,8 +161,8 @@ pub async fn prompt(message: String) -> napi::Result<String> {
 /// const result = await confirm("Continue?", true);
 /// ```
 #[napi]
-pub async fn confirm(message: String, default: Option<bool>) -> napi::Result<bool> {
-    let def = default.unwrap_or(true);
+pub async fn confirm(message: String, value: Option<bool>) -> napi::Result<bool> {
+    let def = value.unwrap_or(true);
     let suffix = if def { "[Y/n]" } else { "[y/N]" };
     print!("{} {}: ", message.cyan(), suffix);
     let _ = io::stdout().flush();

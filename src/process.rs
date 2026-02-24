@@ -253,6 +253,8 @@ pub struct ProcessStatus {
 /// Process output containing stdout and stderr.
 #[napi(object)]
 pub struct ProcessOutput {
+    /// Process ID
+    pub pid: u32,
     /// Standard output content
     pub stdout: String,
     /// Standard error content
@@ -414,26 +416,39 @@ pub async fn spawn_with_pipes(options: SpawnOptions) -> napi::Result<ProcessStat
 ///
 /// # Arguments
 /// * `command` - The command to execute
+/// * `args` - Optional command-line arguments
 ///
 /// # Returns
 /// * `Result<ProcessOutput, napi::Error>` - Combined stdout and stderr
 ///
 /// # Example
 /// ```javascript
-/// const { exec_sync } = require('stdio-napi');
-/// const output = exec_sync("ls");
-/// console.log(output.stdout);
+/// const { execSync } = require('stdio-napi');
+/// const output = execSync("ls", ["-la"]);
+/// console.log(output.stdout, output.pid);
 /// ```
 #[napi]
-pub fn exec_sync(command: String) -> napi::Result<ProcessOutput> {
-    let output = StdCommand::new(&command)
-        .output()
+pub fn exec_sync(command: String, args: Option<Vec<String>>) -> napi::Result<ProcessOutput> {
+    let mut cmd = StdCommand::new(&command);
+    if let Some(ref args) = args {
+        cmd.args(args);
+    }
+
+    // Spawn the process to get PID, then wait for output
+    let child = cmd
+        .spawn()
         .map_err(|e| napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e)))?;
+
+    let pid = child.id();
+    let output = child
+        .wait_with_output()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e)))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     Ok(ProcessOutput {
+        pid,
         stdout,
         stderr,
         code: output.status.code(),
@@ -452,20 +467,27 @@ pub fn exec_sync(command: String) -> napi::Result<ProcessOutput> {
 ///
 /// # Example
 /// ```javascript
-/// const { exec_sync_with_args } = require('stdio-napi');
-/// const output = exec_sync_with_args("ls", ["-la", "/tmp"]);
+/// const { execSyncWithArgs } = require('stdio-napi');
+/// const output = execSyncWithArgs("ls", ["-la", "/tmp"]);
+/// console.log(output.pid);
 /// ```
 #[napi]
 pub fn exec_sync_with_args(command: String, args: Vec<String>) -> napi::Result<ProcessOutput> {
-    let output = StdCommand::new(&command)
+    let child = StdCommand::new(&command)
         .args(&args)
-        .output()
+        .spawn()
         .map_err(|e| napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e)))?;
+
+    let pid = child.id();
+    let output = child
+        .wait_with_output()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e)))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     Ok(ProcessOutput {
+        pid,
         stdout,
         stderr,
         code: output.status.code(),

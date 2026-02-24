@@ -81,6 +81,7 @@ const commands: Record<string, (cmd: IPCCommand) => IPCResponse | Promise<IPCRes
     }
     try {
       const result = execSync(cmd.args[0], cmd.args.slice(1));
+      console.log(result)
       return {
         status: "ok",
         data: result.stdout,
