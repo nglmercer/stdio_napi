@@ -183,22 +183,60 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ---
 
-## Next Phase: v6.0.0 - Platform Enhancements
+## Next Phase: v6.0.0 - Platform Enhancements (✅ Complete)
 
 ### Windows-Specific APIs
 
-- [ ] Windows console API integration
-- [ ] Windows job objects for process management
-- [ ] Windows named pipes support
+- [x] Windows console API integration
+  - [x] ConsoleBufferInfo struct
+  - [x] ConsoleMode struct
+  - [x] ConsoleModeFlags enum
+  - [x] ConsoleColor enum
+  - [x] get_console_buffer_info
+  - [x] get_console_input_mode / set_console_input_mode
+  - [x] set_console_output_mode
+  - [x] enable_virtual_terminal_processing
+  - [x] set_console_text_color / reset_console_attributes
+- [x] Windows job objects for process management
+  - [x] create_job_object
+  - [x] assign_process_to_job
+  - [x] terminate_job_object
+  - [x] close_job_object
+- [x] Windows named pipes support
+  - [x] create_named_pipe
+  - [x] connect_named_pipe
+  - [x] wait_named_pipe
+  - [x] read_named_pipe
+  - [x] write_named_pipe
+  - [x] close_named_pipe
 
 ### macOS-Specific APIs
 
-- [ ] macOS terminal integration
-- [ ] macOS keychain integration for secure storage
+- [x] macOS terminal integration
+  - [x] get_terminal_app
+  - [x] open_url
+  - [x] reveal_in_finder
+  - [x] set_clipboard / get_clipboard
+  - [x] get_macos_version / get_darwin_version
+  - [x] get_home_directory / get_applications_folder / get_library_folder
+  - [x] show_notification
+  - [x] get_system_memory
+  - [x] get_cpu_info / get_cpu_count
+- [x] macOS keychain integration for secure storage
+  - [x] keychain_store
+  - [x] keychain_retrieve
+  - [x] keychain_delete
 
 ### Advanced Features
 
-- [ ] Pseudo-terminal (PTY) support
+- [x] Pseudo-terminal (PTY) support
+  - [x] open_pty - Open a new PTY pair
+  - [x] get_pty_size - Get PTY dimensions
+  - [x] set_pty_size - Set PTY dimensions
+  - [x] get_window_size - Get window size
+  - [x] get_pty_name - Get PTY slave name
+  - [x] is_pty_supported - Check PTY support
+  - [x] ManagedPtyProcess class for PTY process management
 
 ---
 
@@ -269,8 +307,8 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ### Platform Enhancements (✅ Complete)
 
-- [ ] Add Windows-specific APIs
-- [ ] Add macOS-specific APIs
+- [x] Add Windows-specific APIs
+- [x] Add macOS-specific APIs
 - [x] Cross-platform signal handling (✅ Complete)
   - [x] SignalHandler class for receiving signals
   - [x] send_signal - Send signals to processes

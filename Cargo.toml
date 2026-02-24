@@ -28,6 +28,7 @@ libc = "0.2"
 errno = "0.3"
 atty = "0.2"
 regex = "1.10"
+dirs = "5"
 
 [target.'cfg(unix)'.dependencies]
 futures-util = "0.3"
@@ -40,6 +41,11 @@ winapi = { version = "0.3", features = [
   "wincon",
   "processthreadsapi",
   "handleapi",
+  "jobapi2",
+  "namedpipeapi",
+  "fileapi",
+  "winbase",
+  "winerror",
 ] }
 
 [dev-dependencies]
