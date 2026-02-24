@@ -151,25 +151,67 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 - [x] Progress bars
 - [x] Spinners
 - [x] Interactive menus
-- [ ] Form inputs
+- [x] Form inputs (✅ Complete)
 
 ---
 
-## Next Phase: v4.0.0 - Advanced Features (>>> In Progress)
+## Next Phase: v4.0.0 - Advanced Features (✅ Complete)
 
 ### Advanced Features
 
-- [ ] Form inputs for interactive data collection
-- [ ] Table rendering for terminal output
-- [ ] Key event handling (keyboard shortcuts)
-- [ ] Mouse event support
+- [x] Form inputs for interactive data collection (✅ Complete)
+  - [x] Text input with validation
+  - [x] Number input with min/max validation
+  - [x] Password input with raw mode
+  - [x] Checkbox (yes/no)
+  - [x] Select with arrow key navigation
+  - [x] Multi-select with checkbox selection
+  - [x] Batch form (collect_form, display_form)
+- [x] Table rendering for terminal output (✅ Complete)
+  - [x] render_table - Render table to string
+  - [x] print_table - Print table directly to stdout
+  - [x] create_table - Simple table from headers and rows
+  - [x] render_key_value_table - Key-value pairs table
+  - [x] render_csv_table - CSV data to table
+  - [x] Multiple border styles (single, double, rounded, markdown, ascii)
+  - [x] Column alignment (left, center, right)
+  - [x] Color support for headers and cells
+- [x] Key event handling (keyboard shortcuts) (✅ Complete)
+  - [x] read_key - Read single key press
+  - [x] read_key_with_timeout - Read key with timeout
+  - [x] read_line_with_events - Read line with key events
+  - [x] wait_for_shortcut - Wait for keyboard shortcut
+  - [x] is_keyboard_available - Check if terminal
+  - [x] KeyboardEvent struct with modifiers
+- [x] Mouse event support (✅ Complete)
+  - [x] enable_mouse - Enable mouse reporting
+  - [x] disable_mouse - Disable mouse reporting
+  - [x] read_mouse_event - Read mouse event
+  - [x] read_mouse_event_timeout - Read with timeout
+  - [x] wait_for_click_at - Wait for click at position
+  - [x] wait_for_click_in_region - Wait for click in region
+  - [x] MouseEventListener - Continuous mouse monitoring
+  - [x] is_mouse_supported - Check mouse support
 - [ ] Terminal multiplexing support
 
-### Performance
+### Performance (✅ Complete)
 
-- [ ] Add benchmarks for stdio operations
-- [ ] Add benchmarks for terminal operations
-- [ ] Add benchmarks for process spawning
+- [x] Add benchmarks for stdio operations
+  - [x] benchmark_print - Print operations
+  - [x] benchmark_string_format - String formatting
+  - [x] benchmark_progress_bar - Progress bar rendering
+  - [x] benchmark_spinner - Spinner frame generation
+- [x] Add benchmarks for terminal operations
+  - [x] benchmark_terminal_size - Terminal size queries
+  - [x] benchmark_table_render - Table rendering
+- [x] Add benchmarks for process spawning
+  - [x] benchmark_shell_escape - Shell escape operations
+  - [x] benchmark_key_parsing - Key combination parsing
+- [x] Add general benchmarks
+  - [x] benchmark_string_allocation - String allocation
+  - [x] benchmark_vector_operations - Vector operations
+  - [x] benchmark_hashmap_operations - HashMap operations
+  - [x] run_benchmark_suite - Run all benchmarks
 
 ### Platform Enhancements
 

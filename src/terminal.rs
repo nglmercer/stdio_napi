@@ -1,10 +1,9 @@
-use napi_derive::napi;
 use crossterm::{
+    cursor, execute,
     terminal::{self, size},
-    cursor,
-    execute,
     Command,
 };
+use napi_derive::napi;
 use std::io::{stdout, Write};
 
 /// Cursor shape options for terminal.
@@ -111,10 +110,9 @@ pub fn get_terminal_info() -> TerminalInfo {
 /// ```
 #[napi]
 pub fn get_terminal_size() -> napi::Result<TerminalSize> {
-    let (columns, rows) = size().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to get terminal size: {}", e))
-    })?;
-    
+    let (columns, rows) = size()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to get terminal size: {}", e)))?;
+
     Ok(TerminalSize { columns, rows })
 }
 
@@ -131,9 +129,8 @@ pub fn clear_screen() -> napi::Result<()> {
         stdout(),
         terminal::Clear(terminal::ClearType::All),
         cursor::MoveTo(0, 0)
-    ).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to clear screen: {}", e))
-    })
+    )
+    .map_err(|e| napi::Error::from_reason(format!("Failed to clear screen: {}", e)))
 }
 
 /// Moves the cursor to the specified position.
@@ -149,12 +146,8 @@ pub fn clear_screen() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn move_cursor(column: u16, row: u16) -> napi::Result<()> {
-    execute!(
-        stdout(),
-        cursor::MoveTo(column, row)
-    ).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor: {}", e))
-    })
+    execute!(stdout(), cursor::MoveTo(column, row))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor: {}", e)))
 }
 
 /// Shows the cursor (after it was hidden).
@@ -166,9 +159,8 @@ pub fn move_cursor(column: u16, row: u16) -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn show_cursor() -> napi::Result<()> {
-    execute!(stdout(), cursor::Show).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to show cursor: {}", e))
-    })
+    execute!(stdout(), cursor::Show)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to show cursor: {}", e)))
 }
 
 /// Hides the cursor.
@@ -180,9 +172,8 @@ pub fn show_cursor() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn hide_cursor() -> napi::Result<()> {
-    execute!(stdout(), cursor::Hide).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to hide cursor: {}", e))
-    })
+    execute!(stdout(), cursor::Hide)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to hide cursor: {}", e)))
 }
 
 /// Sets the terminal window title.
@@ -197,9 +188,8 @@ pub fn hide_cursor() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn set_terminal_title(title: String) -> napi::Result<()> {
-    execute!(stdout(), terminal::SetTitle(title)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to set terminal title: {}", e))
-    })
+    execute!(stdout(), terminal::SetTitle(title))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to set terminal title: {}", e)))
 }
 
 /// Enters the alternate screen buffer.
@@ -214,9 +204,8 @@ pub fn set_terminal_title(title: String) -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn enter_alternate_screen() -> napi::Result<()> {
-    execute!(stdout(), terminal::EnterAlternateScreen).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to enter alternate screen: {}", e))
-    })
+    execute!(stdout(), terminal::EnterAlternateScreen)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to enter alternate screen: {}", e)))
 }
 
 /// Leaves the alternate screen buffer and returns to the main screen.
@@ -228,9 +217,8 @@ pub fn enter_alternate_screen() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn leave_alternate_screen() -> napi::Result<()> {
-    execute!(stdout(), terminal::LeaveAlternateScreen).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to leave alternate screen: {}", e))
-    })
+    execute!(stdout(), terminal::LeaveAlternateScreen)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to leave alternate screen: {}", e)))
 }
 
 /// Enables raw mode for the terminal.
@@ -245,9 +233,8 @@ pub fn leave_alternate_screen() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn enable_raw_mode() -> napi::Result<()> {
-    terminal::enable_raw_mode().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to enable raw mode: {}", e))
-    })
+    terminal::enable_raw_mode()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to enable raw mode: {}", e)))
 }
 
 /// Disables raw mode and restores normal terminal behavior.
@@ -259,9 +246,8 @@ pub fn enable_raw_mode() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn disable_raw_mode() -> napi::Result<()> {
-    terminal::disable_raw_mode().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to disable raw mode: {}", e))
-    })
+    terminal::disable_raw_mode()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to disable raw mode: {}", e)))
 }
 
 /// Sets the cursor shape using ANSI escape codes.
@@ -287,10 +273,10 @@ pub fn set_cursor_shape(shape: CursorShape) -> napi::Result<()> {
         CursorShape::Bar => "\x1b[4 q",
         CursorShape::BlinkingBar => "\x1b[5 q",
     };
-    
+
     print!("{}", ansi_code);
     let _ = stdout().flush();
-    
+
     Ok(())
 }
 
@@ -310,9 +296,8 @@ pub fn set_cursor_shape(shape: CursorShape) -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn set_scroll_region(top: u16, bottom: u16) -> napi::Result<()> {
-    execute!(stdout(), SetScrollRegion { top, bottom }).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to set scroll region: {}", e))
-    })
+    execute!(stdout(), SetScrollRegion { top, bottom })
+        .map_err(|e| napi::Error::from_reason(format!("Failed to set scroll region: {}", e)))
 }
 
 /// Resets the scroll region to the full terminal.
@@ -326,12 +311,16 @@ pub fn set_scroll_region(top: u16, bottom: u16) -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn reset_scroll_region() -> napi::Result<()> {
-    let (_, rows) = size().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to get terminal size: {}", e))
-    })?;
-    execute!(stdout(), SetScrollRegion { top: 0, bottom: rows.saturating_sub(1) }).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to reset scroll region: {}", e))
-    })
+    let (_, rows) = size()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to get terminal size: {}", e)))?;
+    execute!(
+        stdout(),
+        SetScrollRegion {
+            top: 0,
+            bottom: rows.saturating_sub(1)
+        }
+    )
+    .map_err(|e| napi::Error::from_reason(format!("Failed to reset scroll region: {}", e)))
 }
 
 /// Scrolls the screen up by n lines.
@@ -348,9 +337,8 @@ pub fn reset_scroll_region() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn scroll_up(n: u16) -> napi::Result<()> {
-    execute!(stdout(), terminal::ScrollUp(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to scroll up: {}", e))
-    })
+    execute!(stdout(), terminal::ScrollUp(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to scroll up: {}", e)))
 }
 
 /// Scrolls the screen down by n lines.
@@ -367,9 +355,8 @@ pub fn scroll_up(n: u16) -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn scroll_down(n: u16) -> napi::Result<()> {
-    execute!(stdout(), terminal::ScrollDown(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to scroll down: {}", e))
-    })
+    execute!(stdout(), terminal::ScrollDown(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to scroll down: {}", e)))
 }
 
 /// Clears the entire current line where the cursor is positioned.
@@ -381,9 +368,8 @@ pub fn scroll_down(n: u16) -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn clear_current_line() -> napi::Result<()> {
-    execute!(stdout(), terminal::Clear(terminal::ClearType::CurrentLine)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to clear current line: {}", e))
-    })
+    execute!(stdout(), terminal::Clear(terminal::ClearType::CurrentLine))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to clear current line: {}", e)))
 }
 
 /// Clears from the cursor position to the end of the current line.
@@ -397,9 +383,8 @@ pub fn clear_current_line() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn clear_until_newline() -> napi::Result<()> {
-    execute!(stdout(), terminal::Clear(terminal::ClearType::UntilNewLine)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to clear until newline: {}", e))
-    })
+    execute!(stdout(), terminal::Clear(terminal::ClearType::UntilNewLine))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to clear until newline: {}", e)))
 }
 
 /// Clears from the cursor position to the beginning of the current line.
@@ -413,9 +398,8 @@ pub fn clear_until_newline() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn clear_from_cursor() -> napi::Result<()> {
-    execute!(stdout(), terminal::Clear(terminal::ClearType::FromCursorUp)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to clear from cursor: {}", e))
-    })
+    execute!(stdout(), terminal::Clear(terminal::ClearType::FromCursorUp))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to clear from cursor: {}", e)))
 }
 
 /// Saves the current cursor position.
@@ -432,57 +416,50 @@ pub fn clear_from_cursor() -> napi::Result<()> {
 /// ```
 #[napi]
 pub fn save_cursor_position() -> napi::Result<()> {
-    execute!(stdout(), cursor::SavePosition).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to save cursor position: {}", e))
-    })
+    execute!(stdout(), cursor::SavePosition)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to save cursor position: {}", e)))
 }
 
 /// Restore the saved cursor position
 #[napi]
 pub fn restore_cursor_position() -> napi::Result<()> {
-    execute!(stdout(), cursor::RestorePosition).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to restore cursor position: {}", e))
-    })
+    execute!(stdout(), cursor::RestorePosition)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to restore cursor position: {}", e)))
 }
 
 /// Move cursor up by n rows
 #[napi]
 pub fn move_cursor_up(n: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveUp(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor up: {}", e))
-    })
+    execute!(stdout(), cursor::MoveUp(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor up: {}", e)))
 }
 
 /// Move cursor down by n rows
 #[napi]
 pub fn move_cursor_down(n: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveDown(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor down: {}", e))
-    })
+    execute!(stdout(), cursor::MoveDown(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor down: {}", e)))
 }
 
 /// Move cursor left by n columns
 #[napi]
 pub fn move_cursor_left(n: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveLeft(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor left: {}", e))
-    })
+    execute!(stdout(), cursor::MoveLeft(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor left: {}", e)))
 }
 
 /// Move cursor right by n columns
 #[napi]
 pub fn move_cursor_right(n: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveRight(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor right: {}", e))
-    })
+    execute!(stdout(), cursor::MoveRight(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor right: {}", e)))
 }
 
 /// Move cursor to the beginning of the next line (column 0)
 #[napi]
 pub fn move_cursor_next_line(n: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveToNextLine(n)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor to next line: {}", e))
-    })
+    execute!(stdout(), cursor::MoveToNextLine(n))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor to next line: {}", e)))
 }
 
 /// Move cursor to the beginning of the previous line (column 0)
@@ -496,17 +473,15 @@ pub fn move_cursor_previous_line(n: u16) -> napi::Result<()> {
 /// Move cursor to a specific column on the current row
 #[napi]
 pub fn move_cursor_to_column(column: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveToColumn(column)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor to column: {}", e))
-    })
+    execute!(stdout(), cursor::MoveToColumn(column))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor to column: {}", e)))
 }
 
 /// Move cursor to a specific row at column 0
 #[napi]
 pub fn move_cursor_to_row(row: u16) -> napi::Result<()> {
-    execute!(stdout(), cursor::MoveToRow(row)).map_err(|e| {
-        napi::Error::from_reason(format!("Failed to move cursor to row: {}", e))
-    })
+    execute!(stdout(), cursor::MoveToRow(row))
+        .map_err(|e| napi::Error::from_reason(format!("Failed to move cursor to row: {}", e)))
 }
 
 /// Check if stdout is connected to a terminal (TTY)
@@ -554,7 +529,7 @@ mod tests {
         let stdout_tty = is_tty();
         let stderr_tty = is_stderr_tty();
         let stdin_tty = is_stdin_tty();
-        
+
         assert!(stdout_tty == true || stdout_tty == false);
         assert!(stderr_tty == true || stderr_tty == false);
         assert!(stdin_tty == true || stdin_tty == false);
@@ -721,7 +696,7 @@ mod tests {
     fn test_save_restore_cursor_position() {
         let save_result = save_cursor_position();
         assert!(save_result.is_ok());
-        
+
         let restore_result = restore_cursor_position();
         assert!(restore_result.is_ok());
     }

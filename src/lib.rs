@@ -1,12 +1,18 @@
-mod stdio;
-mod terminal;
-mod process;
 mod error;
+mod forms;
+mod keyboard;
+mod process;
+mod stdio;
+mod table;
+mod terminal;
 
-pub use stdio::*;
-pub use terminal::*;
-pub use process::*;
 pub use error::*;
+pub use forms::*;
+pub use keyboard::*;
+pub use process::*;
+pub use stdio::*;
+pub use table::*;
+pub use terminal::*;
 
 use napi_derive::napi;
 

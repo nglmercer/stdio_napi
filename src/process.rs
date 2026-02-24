@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use std::collections::HashMap;
-use std::process::Stdio as StdStdio;
 use std::process::Command as StdCommand;
+use std::process::Stdio as StdStdio;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command};
@@ -92,7 +92,9 @@ impl ManagedProcess {
             .stderr(StdStdio::piped())
             .stdin(StdStdio::piped())
             .spawn()
-            .map_err(|e| napi::Error::from_reason(format!("Failed to spawn '{}': {}", command, e)))?;
+            .map_err(|e| {
+                napi::Error::from_reason(format!("Failed to spawn '{}': {}", command, e))
+            })?;
 
         let pid = child.id().unwrap_or(0);
 
@@ -168,7 +170,9 @@ impl ManagedProcess {
         let mut child_guard = self.child.lock().await;
         if let Some(ref mut child) = *child_guard {
             if let Some(ref mut stdin) = child.stdin {
-                stdin.write_all(data.as_bytes()).await
+                stdin
+                    .write_all(data.as_bytes())
+                    .await
                     .map_err(|e| napi::Error::from_reason(format!("Write error: {}", e)))?;
                 Ok(())
             } else {
@@ -187,7 +191,9 @@ impl ManagedProcess {
     pub async fn wait(&self) -> napi::Result<ProcessStatus> {
         let mut child_guard = self.child.lock().await;
         if let Some(ref mut child) = child_guard.take() {
-            let status = child.wait().await
+            let status = child
+                .wait()
+                .await
                 .map_err(|e| napi::Error::from_reason(format!("Wait error: {}", e)))?;
             Ok(ProcessStatus {
                 pid: self.pid,
@@ -204,7 +210,9 @@ impl ManagedProcess {
     pub async fn kill(&self) -> napi::Result<()> {
         let mut child_guard = self.child.lock().await;
         if let Some(ref mut child) = *child_guard {
-            child.kill().await
+            child
+                .kill()
+                .await
                 .map_err(|e| napi::Error::from_reason(format!("Kill error: {}", e)))?;
             Ok(())
         } else {
@@ -279,7 +287,9 @@ pub async fn exec_command(command: String, args: Vec<String>) -> napi::Result<Pr
         .spawn()
         .map_err(|e| napi::Error::from_reason(format!("Failed to spawn '{}': {}", command, e)))?;
 
-    let status = child.wait().await
+    let status = child
+        .wait()
+        .await
         .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
 
     Ok(ProcessStatus {
@@ -335,10 +345,13 @@ pub async fn spawn_with_options(options: SpawnOptions) -> napi::Result<ProcessSt
         cmd.stderr(StdStdio::inherit());
     }
 
-    let mut child = cmd.spawn()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e)))?;
+    let mut child = cmd.spawn().map_err(|e| {
+        napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e))
+    })?;
 
-    let status = child.wait().await
+    let status = child
+        .wait()
+        .await
         .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
 
     Ok(ProcessStatus {
@@ -381,10 +394,13 @@ pub async fn spawn_with_pipes(options: SpawnOptions) -> napi::Result<ProcessStat
     cmd.stderr(StdStdio::piped());
     cmd.stdin(StdStdio::piped());
 
-    let mut child = cmd.spawn()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e)))?;
+    let mut child = cmd.spawn().map_err(|e| {
+        napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e))
+    })?;
 
-    let status = child.wait().await
+    let status = child
+        .wait()
+        .await
         .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
 
     Ok(ProcessStatus {
@@ -524,18 +540,28 @@ pub async fn kill_process(pid: u32, signal: Option<String>) -> napi::Result<bool
             if result == 0 {
                 Ok(true)
             } else {
-                Err(napi::Error::from_reason(format!("Failed to kill process {}: {}", pid, errno::errno())))
+                Err(napi::Error::from_reason(format!(
+                    "Failed to kill process {}: {}",
+                    pid,
+                    errno::errno()
+                )))
             }
         }
     }
 
     #[cfg(windows)]
     {
-        let force_flag = if signal.as_deref() == Some("KILL") { "/F" } else { "" };
+        let force_flag = if signal.as_deref() == Some("KILL") {
+            "/F"
+        } else {
+            ""
+        };
         let output = StdCommand::new("taskkill")
             .args(&[force_flag, "/PID", &pid.to_string()])
             .output()
-            .map_err(|e| napi::Error::from_reason(format!("Failed to kill process {}: {}", pid, e)))?;
+            .map_err(|e| {
+                napi::Error::from_reason(format!("Failed to kill process {}: {}", pid, e))
+            })?;
 
         Ok(output.status.success())
     }
@@ -545,7 +571,8 @@ pub async fn kill_process(pid: u32, signal: Option<String>) -> napi::Result<bool
 #[napi]
 pub async fn wait_for_process(_pid: u32) -> napi::Result<ProcessStatus> {
     Err(napi::Error::from_reason(
-        "wait_for_process requires the Child object. Use spawn_with_pipes and keep the reference.".to_string()
+        "wait_for_process requires the Child object. Use spawn_with_pipes and keep the reference."
+            .to_string(),
     ))
 }
 
@@ -553,7 +580,7 @@ pub async fn wait_for_process(_pid: u32) -> napi::Result<ProcessStatus> {
 #[napi]
 pub async fn read_process_stdout(_pid: u32) -> napi::Result<String> {
     Err(napi::Error::from_reason(
-        "Use spawn_with_pipes and read from the Child's stdout directly.".to_string()
+        "Use spawn_with_pipes and read from the Child's stdout directly.".to_string(),
     ))
 }
 
@@ -561,7 +588,7 @@ pub async fn read_process_stdout(_pid: u32) -> napi::Result<String> {
 #[napi]
 pub async fn read_process_stderr(_pid: u32) -> napi::Result<String> {
     Err(napi::Error::from_reason(
-        "Use spawn_with_pipes and read from the Child's stderr directly.".to_string()
+        "Use spawn_with_pipes and read from the Child's stderr directly.".to_string(),
     ))
 }
 
@@ -569,7 +596,7 @@ pub async fn read_process_stderr(_pid: u32) -> napi::Result<String> {
 #[napi]
 pub async fn write_process_stdin(_pid: u32, _input: String) -> napi::Result<()> {
     Err(napi::Error::from_reason(
-        "Use spawn_with_pipes and write to the Child's stdin directly.".to_string()
+        "Use spawn_with_pipes and write to the Child's stdin directly.".to_string(),
     ))
 }
 
@@ -621,7 +648,7 @@ mod tests {
         let result = shell_escape_args(vec![
             "hello".to_string(),
             "world".to_string(),
-            "test".to_string()
+            "test".to_string(),
         ]);
         assert_eq!(result.len(), 3);
     }
