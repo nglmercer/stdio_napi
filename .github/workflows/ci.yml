@@ -4,8 +4,8 @@
 name: CI
 
 env:
-  LIB_NAME: napi-template-bun
-  BINARY_NAME: template
+  LIB_NAME: stdio-napi
+  BINARY_NAME: stdio-napi
   CARGO_TERM_COLOR: always
 
 on:
