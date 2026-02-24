@@ -440,9 +440,9 @@ pub fn exec_sync(command: String, args: Option<Vec<String>>) -> napi::Result<Pro
         .map_err(|e| napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e)))?;
 
     let pid = child.id();
-    let output = child
-        .wait_with_output()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e)))?;
+    let output = child.wait_with_output().map_err(|e| {
+        napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
+    })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -479,9 +479,9 @@ pub fn exec_sync_with_args(command: String, args: Vec<String>) -> napi::Result<P
         .map_err(|e| napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e)))?;
 
     let pid = child.id();
-    let output = child
-        .wait_with_output()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e)))?;
+    let output = child.wait_with_output().map_err(|e| {
+        napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
+    })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();

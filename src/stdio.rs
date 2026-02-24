@@ -458,9 +458,275 @@ pub async fn read_multiline(delimiter: Option<String>) -> napi::Result<String> {
     Ok(lines.join("\n"))
 }
 
+/// Reads a line with interactive editing features.
+///
+/// Enables raw mode for full line editing capabilities:
+/// - Arrow keys for cursor navigation (left/right)
+/// - Arrow keys for history navigation (up/down)
+/// - Backspace/Delete for editing
+/// - Home/End for line start/end
+/// - Ctrl+C to cancel
+///
+/// Note: Requires a TTY (terminal). If not running in a terminal, falls back to simple read_line.
+///
+/// # Arguments
+/// * `prompt` - Optional prompt string to display
+/// * `history` - Optional array of history entries for up/down navigation
+///
+/// # Returns
+/// * `Result<String, napi::Error>` - The entered line (trimmed)
+///
+/// # Example
+/// ```javascript
+/// const { read_line_interactive } = require('stdio-napi');
+/// const input = await read_line_interactive("> ", ["previous command 1", "previous command 2"]);
+/// ```
+#[napi]
+pub async fn read_line_interactive(
+    prompt: Option<String>,
+    history: Option<Vec<String>>,
+) -> napi::Result<String> {
+    use crossterm::cursor::{MoveLeft, MoveRight, MoveToColumn};
+    use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::terminal;
+    use crossterm::QueueableCommand;
+
+    // Check if stdin is a TTY
+    if !atty::is(atty::Stream::Stdin) {
+        // Fallback to simple read_line for non-TTY
+        if let Some(p) = &prompt {
+            print!("{}", p);
+            let _ = io::stdout().flush();
+        }
+        return read_line().await;
+    }
+
+    let prompt_str = prompt.unwrap_or_default();
+    let mut history = history.unwrap_or_default();
+    // Add empty string at the end to represent "current" position
+    history.push(String::new());
+    let mut history_index = history.len() - 1;
+
+    let mut input = String::new();
+    let mut cursor_pos = 0; // Cursor position within input string (in characters)
+
+    // Print prompt
+    print!("{}", prompt_str);
+    let _ = io::stdout().flush();
+
+    terminal::enable_raw_mode()
+        .map_err(|e| napi::Error::from_reason(format!("Failed to enable raw mode: {}", e)))?;
+
+    let result = async {
+        loop {
+            if event::poll(std::time::Duration::from_millis(100))
+                .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
+            {
+                if let Event::Key(KeyEvent {
+                    code, modifiers, ..
+                }) = event::read()
+                    .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?
+                {
+                    match code {
+                        KeyCode::Enter => {
+                            println!();
+                            break;
+                        }
+                        KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
+                            println!("^C");
+                            return Ok(String::new());
+                        }
+                        KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => {
+                            println!("^D");
+                            return Ok(String::new());
+                        }
+                        KeyCode::Char(c) => {
+                            // Insert character at cursor position
+                            if cursor_pos >= input.len() {
+                                input.push(c);
+                            } else {
+                                input.insert(cursor_pos, c);
+                            }
+                            cursor_pos += c.len_utf8();
+
+                            // Redraw from cursor
+                            let suffix: String = input.chars().skip(cursor_pos).collect();
+                            print!("{}", c);
+                            if !suffix.is_empty() {
+                                print!("{}", suffix);
+                                // Move cursor back to correct position
+                                let _ = io::stdout()
+                                    .queue(MoveLeft(suffix.chars().count() as u16));
+                            }
+                            let _ = io::stdout().flush();
+                        }
+                        KeyCode::Backspace => {
+                            if cursor_pos > 0 && !input.is_empty() {
+                                // Find the character before cursor
+                                let char_pos = input
+                                    .char_indices()
+                                    .nth(cursor_pos - 1)
+                                    .map(|(i, _)| i);
+                                if let Some(pos) = char_pos {
+                                    input.remove(pos);
+                                    cursor_pos -= 1;
+
+                                    // Redraw
+                                    let _ = io::stdout().queue(MoveLeft(1));
+                                    let suffix: String =
+                                        input.chars().skip(cursor_pos).collect();
+                                    print!("{}", suffix);
+                                    print!(" "); // Clear the deleted character
+                                    let move_back = suffix.chars().count() + 1;
+                                    let _ = io::stdout()
+                                        .queue(MoveLeft(move_back as u16));
+                                    let _ = io::stdout().flush();
+                                }
+                            }
+                        }
+                        KeyCode::Delete => {
+                            if cursor_pos < input.len() {
+                                // Delete character at cursor
+                                let char_pos =
+                                    input.char_indices().nth(cursor_pos).map(|(i, _)| i);
+                                if let Some(pos) = char_pos {
+                                    input.remove(pos);
+
+                                    // Redraw
+                                    let suffix: String =
+                                        input.chars().skip(cursor_pos).collect();
+                                    print!("{}", suffix);
+                                    print!(" "); // Clear the deleted character
+                                    let move_back = suffix.chars().count() + 1;
+                                    let _ = io::stdout()
+                                        .queue(MoveLeft(move_back as u16));
+                                    let _ = io::stdout().flush();
+                                }
+                            }
+                        }
+                        KeyCode::Left => {
+                            if cursor_pos > 0 {
+                                cursor_pos -= 1;
+                                let _ = io::stdout().queue(MoveLeft(1));
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::Right => {
+                            if cursor_pos < input.len() {
+                                cursor_pos += 1;
+                                let _ = io::stdout().queue(MoveRight(1));
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::Home => {
+                            if cursor_pos > 0 {
+                                let _ = io::stdout()
+                                    .queue(MoveLeft(cursor_pos as u16));
+                                cursor_pos = 0;
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::End => {
+                            let chars_count = input.chars().count();
+                            if cursor_pos < chars_count {
+                                let move_right = (chars_count - cursor_pos) as u16;
+                                let _ = io::stdout().queue(MoveRight(move_right));
+                                cursor_pos = chars_count;
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::Up => {
+                            if history_index > 0 {
+                                // Save current input
+                                history[history_index] = input.clone();
+
+                                // Move to previous history entry
+                                history_index -= 1;
+                                input = history[history_index].clone();
+
+                                // Clear line and redraw
+                                let _ = io::stdout().queue(MoveToColumn(0));
+                                print!("{}{}", prompt_str, input);
+                                // Clear rest of line
+                                let old_len = history[history_index + 1].chars().count();
+                                let new_len = input.chars().count();
+                                if old_len > new_len {
+                                    print!("{}", " ".repeat(old_len - new_len));
+                                    let _ = io::stdout()
+                                        .queue(MoveLeft((old_len - new_len) as u16));
+                                }
+                                cursor_pos = input.chars().count();
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::Down => {
+                            if history_index < history.len() - 1 {
+                                // Save current input
+                                history[history_index] = input.clone();
+
+                                // Move to next history entry
+                                history_index += 1;
+                                input = history[history_index].clone();
+
+                                // Clear line and redraw
+                                let _ = io::stdout().queue(MoveToColumn(0));
+                                print!("{}{}", prompt_str, input);
+                                // Clear rest of line
+                                let old_len = history[history_index - 1].chars().count();
+                                let new_len = input.chars().count();
+                                if old_len > new_len {
+                                    print!("{}", " ".repeat(old_len - new_len));
+                                    let _ = io::stdout()
+                                        .queue(MoveLeft((old_len - new_len) as u16));
+                                }
+                                cursor_pos = input.chars().count();
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::Tab => {
+                            // Insert tab as spaces
+                            let spaces = "    ";
+                            for c in spaces.chars() {
+                                if cursor_pos >= input.len() {
+                                    input.push(c);
+                                } else {
+                                    input.insert(cursor_pos, c);
+                                }
+                                cursor_pos += 1;
+                            }
+                            print!("{}", spaces);
+                            let _ = io::stdout().flush();
+                        }
+                        KeyCode::Esc => {
+                            // Clear current input
+                            let chars_count = input.chars().count();
+                            if chars_count > 0 {
+                                let _ = io::stdout().queue(MoveLeft(chars_count as u16));
+                                print!("{}", " ".repeat(chars_count));
+                                let _ = io::stdout().queue(MoveLeft(chars_count as u16));
+                                let _ = io::stdout().flush();
+                            }
+                            input.clear();
+                            cursor_pos = 0;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
+        Ok(input.trim().to_string())
+    }
+    .await;
+
+    let _ = terminal::disable_raw_mode();
+    result
+}
+
 #[napi]
 pub struct BufferedReader {
     reader: std::sync::Arc<tokio::sync::Mutex<BufReader<tokio::io::Stdin>>>,
+    is_raw_mode: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[napi]
@@ -471,11 +737,295 @@ impl BufferedReader {
             reader: std::sync::Arc::new(tokio::sync::Mutex::new(
                 BufReader::new(tokio::io::stdin()),
             )),
+            is_raw_mode: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
+    }
+
+    /// Enables raw mode for terminal input.
+    /// This allows reading individual key presses including arrow keys.
+    /// Note: Requires a TTY (terminal). Returns error if not running in a terminal.
+    #[napi]
+    pub fn enable_raw_mode(&self) -> napi::Result<()> {
+        use crossterm::terminal;
+
+        // Check if stdin is a TTY
+        if !atty::is(atty::Stream::Stdin) {
+            return Err(napi::Error::from_reason(
+                "enable_raw_mode requires a terminal (TTY). Not running in interactive mode.".to_string(),
+            ));
+        }
+
+        terminal::enable_raw_mode()
+            .map_err(|e| napi::Error::from_reason(format!("Failed to enable raw mode: {}", e)))?;
+        
+        self.is_raw_mode.store(true, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// Disables raw mode and restores normal terminal behavior.
+    #[napi]
+    pub fn disable_raw_mode(&self) -> napi::Result<()> {
+        use crossterm::terminal;
+
+        terminal::disable_raw_mode()
+            .map_err(|e| napi::Error::from_reason(format!("Failed to disable raw mode: {}", e)))?;
+        
+        self.is_raw_mode.store(false, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// Reads a single key press and returns the key as a string.
+    /// Handles arrow keys, function keys, and special keys.
+    /// Requires raw mode to be enabled first.
+    #[napi]
+    pub async fn read_key(&self) -> napi::Result<Option<String>> {
+        use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+
+        if !self.is_raw_mode.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err(napi::Error::from_reason(
+                "read_key requires raw mode to be enabled. Call enable_raw_mode() first.".to_string(),
+            ));
+        }
+
+        // Wait for a key event
+        loop {
+            if event::poll(std::time::Duration::from_millis(100))
+                .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
+            {
+                if let Event::Key(KeyEvent { code, modifiers, .. }) = event::read()
+                    .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?
+                {
+                    // Handle Ctrl+C
+                    if code == KeyCode::Char('c') && modifiers.contains(KeyModifiers::CONTROL) {
+                        return Ok(Some("\x03".to_string()));
+                    }
+                    
+                    // Handle Ctrl+D
+                    if code == KeyCode::Char('d') && modifiers.contains(KeyModifiers::CONTROL) {
+                        return Ok(Some("\x04".to_string()));
+                    }
+
+                    match code {
+                        KeyCode::Enter => return Ok(Some("\n".to_string())),
+                        KeyCode::Backspace => return Ok(Some("\x7f".to_string())),
+                        KeyCode::Tab => return Ok(Some("\t".to_string())),
+                        KeyCode::Esc => return Ok(Some("\x1b".to_string())),
+                        KeyCode::Up => return Ok(Some("\x1b[A".to_string())),
+                        KeyCode::Down => return Ok(Some("\x1b[B".to_string())),
+                        KeyCode::Right => return Ok(Some("\x1b[C".to_string())),
+                        KeyCode::Left => return Ok(Some("\x1b[D".to_string())),
+                        KeyCode::Home => return Ok(Some("\x1b[H".to_string())),
+                        KeyCode::End => return Ok(Some("\x1b[F".to_string())),
+                        KeyCode::PageUp => return Ok(Some("\x1b[5~".to_string())),
+                        KeyCode::PageDown => return Ok(Some("\x1b[6~".to_string())),
+                        KeyCode::Insert => return Ok(Some("\x1b[2~".to_string())),
+                        KeyCode::Delete => return Ok(Some("\x1b[3~".to_string())),
+                        KeyCode::Char(c) => return Ok(Some(c.to_string())),
+                        KeyCode::F(n) => return Ok(Some(format!("\x1b[{}~", n + 1))),
+                        _ => continue,
+                    }
+                }
+            }
+        }
+    }
+
+    /// Reads a line with full terminal editing support (requires raw mode).
+    /// Supports:
+    /// - Arrow keys for navigation (left/right)
+    /// - Up/Down for command history
+    /// - Backspace/Delete for editing
+    /// - Home/End to jump to line start/end
+    #[napi]
+    pub async fn read_line_raw(&self) -> napi::Result<Option<String>> {
+        if !self.is_raw_mode.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err(napi::Error::from_reason(
+                "read_line_raw requires raw mode to be enabled. Call enable_raw_mode() first.".to_string(),
+            ));
+        }
+
+        use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+        use std::io::Write;
+
+        let mut line = String::new();
+        let mut cursor_pos = 0;
+        let mut history: Vec<String> = Vec::new();
+        let mut history_index: Option<usize> = None;
+        let mut current_input = String::new();
+
+        loop {
+            // Wait for a key event
+            let key = loop {
+                if event::poll(std::time::Duration::from_millis(100))
+                    .map_err(|e| napi::Error::from_reason(format!("Poll error: {}", e)))?
+                {
+                    if let Event::Key(KeyEvent { code, modifiers, .. }) = event::read()
+                        .map_err(|e| napi::Error::from_reason(format!("Read error: {}", e)))?
+                    {
+                        break (code, modifiers);
+                    }
+                }
+            };
+
+            match key {
+                (KeyCode::Enter, _) => {
+                    // User pressed Enter - return the line
+                    println!();
+                    break;
+                }
+                (KeyCode::Backspace, _) => {
+                    // Handle backspace
+                    if cursor_pos > 0 {
+                        line.remove(cursor_pos - 1);
+                        cursor_pos -= 1;
+                        // Redraw line
+                        print!("\r\x1b[K");
+                        print!("> {}", line);
+                        // Move cursor to correct position
+                        let remaining = line.len() - cursor_pos;
+                        if remaining > 0 {
+                            for _ in 0..remaining {
+                                print!("\x1b[D");
+                            }
+                        }
+                        let _ = std::io::stdout().flush();
+                    }
+                }
+                (KeyCode::Delete, _) => {
+                    // Handle Delete key
+                    if cursor_pos < line.len() {
+                        line.remove(cursor_pos);
+                        // Redraw line
+                        print!("\r\x1b[K");
+                        print!("> {}", line);
+                        // Move cursor to correct position
+                        let remaining = line.len() - cursor_pos;
+                        if remaining > 0 {
+                            for _ in 0..remaining {
+                                print!("\x1b[D");
+                            }
+                        }
+                        let _ = std::io::stdout().flush();
+                    }
+                }
+                (KeyCode::Left, _) => {
+                    // Move cursor left
+                    if cursor_pos > 0 {
+                        print!("\x1b[D");
+                        cursor_pos -= 1;
+                        let _ = std::io::stdout().flush();
+                    }
+                }
+                (KeyCode::Right, _) => {
+                    // Move cursor right
+                    if cursor_pos < line.len() {
+                        print!("\x1b[C");
+                        cursor_pos += 1;
+                        let _ = std::io::stdout().flush();
+                    }
+                }
+                (KeyCode::Home, _) => {
+                    // Move to beginning of line
+                    while cursor_pos > 0 {
+                        print!("\x1b[D");
+                        cursor_pos -= 1;
+                    }
+                    let _ = std::io::stdout().flush();
+                }
+                (KeyCode::End, _) => {
+                    // Move to end of line
+                    while cursor_pos < line.len() {
+                        print!("\x1b[C");
+                        cursor_pos += 1;
+                    }
+                    let _ = std::io::stdout().flush();
+                }
+                (KeyCode::Up, _) => {
+                    // History navigation - previous command
+                    if !history.is_empty() {
+                        let idx = history_index.unwrap_or(history.len());
+                        if idx > 0 {
+                            let new_idx = idx - 1;
+                            // Save current input if at bottom of history
+                            if history_index.is_none() {
+                                current_input = line.clone();
+                            }
+                            history_index = Some(new_idx);
+                            // Clear current line and show history item
+                            line = history[new_idx].clone();
+                            cursor_pos = line.len();
+                            print!("\r\x1b[K> {}", line);
+                            let _ = std::io::stdout().flush();
+                        } else if history_index.is_some() {
+                            // Go back to current input
+                            history_index = None;
+                            line = current_input.clone();
+                            cursor_pos = line.len();
+                            print!("\r\x1b[K> {}", line);
+                            let _ = std::io::stdout().flush();
+                        }
+                    }
+                }
+                (KeyCode::Down, _) => {
+                    // History navigation - next command
+                    if let Some(idx) = history_index {
+                        if idx < history.len() - 1 {
+                            let new_idx = idx + 1;
+                            history_index = Some(new_idx);
+                            line = history[new_idx].clone();
+                            cursor_pos = line.len();
+                            print!("\r\x1b[K> {}", line);
+                            let _ = std::io::stdout().flush();
+                        } else {
+                            // Go back to current input
+                            history_index = None;
+                            line = current_input.clone();
+                            cursor_pos = line.len();
+                            print!("\r\x1b[K> {}", line);
+                            let _ = std::io::stdout().flush();
+                        }
+                    }
+                }
+                (KeyCode::Char(c), mods) if !mods.contains(KeyModifiers::CONTROL) => {
+                    // Insert character at cursor position
+                    line.insert(cursor_pos, c);
+                    cursor_pos += 1;
+                    // Redraw line
+                    print!("\r\x1b[K> {}", line);
+                    // Move cursor to correct position
+                    let remaining = line.len() - cursor_pos;
+                    if remaining > 0 {
+                        for _ in 0..remaining {
+                            print!("\x1b[D");
+                        }
+                    }
+                    let _ = std::io::stdout().flush();
+                }
+                (KeyCode::Esc, _) => {
+                    // Escape key - ignore
+                }
+                _ => {}
+            }
+        }
+
+        // Add to history if non-empty
+        if !line.trim().is_empty() {
+            history.push(line.clone());
+        }
+
+        if line.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(line))
         }
     }
 
     #[napi]
     pub async fn read_line(&self) -> napi::Result<Option<String>> {
+        // If raw mode is enabled, use the raw line reader
+        if self.is_raw_mode.load(std::sync::atomic::Ordering::SeqCst) {
+            return self.read_line_raw().await;
+        }
+
         let mut reader = self.reader.lock().await;
         let mut line = String::new();
         let bytes_read = reader

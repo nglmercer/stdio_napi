@@ -21,6 +21,7 @@ import {
   printSuccess,
   printWarning,
   getVersion,
+  readLineInteractive,
 } from "../../index.js";
 
 // Check if running in pipe mode (stdin has data)
@@ -197,18 +198,28 @@ async function pipeMode(): Promise<void> {
 async function interactiveMode(): Promise<void> {
   printSuccess("IPC Server running in interactive mode");
   printInfo("Commands: ping, echo, exec, version, env, sleep, send, receive, help, exit");
-  printInfo("Usage: ping, echo hello world, exec ls -la, help\n");
+  printInfo("Usage: ping, echo hello world, exec ls -la, help");
+  printInfo("Features: Arrow keys for history, Left/Right for editing, Ctrl+C to exit\n");
 
-  const reader = new BufferedReader();
   let lineNum = 0;
+  const history: string[] = [];
 
   while (true) {
     try {
-      process.stdout.write(`[${++lineNum}]> `);
-      const line = await reader.readLine();
+      // Use readLineInteractive for full line editing with history support
+      const line = await readLineInteractive(`[${++lineNum}]> `, history);
       
       if (!line || line.trim() === "") {
         continue;
+      }
+
+      // Add to history (avoid duplicates)
+      if (line.trim() && history[history.length - 1] !== line.trim()) {
+        history.push(line.trim());
+        // Keep history limited to last 100 entries
+        if (history.length > 100) {
+          history.shift();
+        }
       }
 
       const response = processCommand(line);
