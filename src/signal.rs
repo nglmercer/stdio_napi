@@ -10,6 +10,8 @@ use {
     futures_util::StreamExt,
     signal_hook::consts::signal::{self, SIGINT, SIGTERM, SIGUSR1, SIGUSR2, SIGWINCH},
     signal_hook_tokio::Signals,
+    std::sync::Arc,
+    tokio::sync::{broadcast, Mutex},
 };
 
 /// Signal types that can be sent to processes.

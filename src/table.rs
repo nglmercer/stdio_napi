@@ -672,7 +672,7 @@ fn format_cell(content: &str, width: usize, align: ColumnAlign, padding: usize) 
         let mut truncated = String::new();
         let mut visible_count = 0;
         let mut chars = content.chars().peekable();
-        
+
         while let Some(c) = chars.next() {
             if c == '\x1b' {
                 // Handle ANSI escape sequence
@@ -706,7 +706,7 @@ fn format_cell(content: &str, width: usize, align: ColumnAlign, padding: usize) 
 fn strip_ansi_escapes(text: &str) -> String {
     let mut result = String::new();
     let mut chars = text.chars().peekable();
-    
+
     while let Some(c) = chars.next() {
         if c == '\x1b' {
             // Skip ANSI escape sequence
@@ -720,7 +720,7 @@ fn strip_ansi_escapes(text: &str) -> String {
             result.push(c);
         }
     }
-    
+
     result
 }
 
@@ -820,7 +820,7 @@ mod tests {
 
         println!("Table output: '{}'", table);
         println!("Table bytes: {:?}", table.as_bytes());
-        
+
         assert!(table.contains("Name"));
         assert!(table.contains("Age"));
         assert!(table.contains("Alice"));
