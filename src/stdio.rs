@@ -4,38 +4,111 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use colored::*;
 use crossterm::execute;
 
+/// Writes text to stdout without a newline.
+/// 
+/// # Arguments
+/// * `text` - The text to write to stdout
+/// 
+/// # Example
+/// ```javascript
+/// const { print_stdout } = require('stdio-napi');
+/// print_stdout("Hello, World!");
+/// ```
 #[napi]
 pub fn print_stdout(text: String) {
     print!("{}", text);
     let _ = io::stdout().flush();
 }
 
+/// Writes text to stderr without a newline.
+/// 
+/// # Arguments
+/// * `text` - The text to write to stderr
+/// 
+/// # Example
+/// ```javascript
+/// const { print_stderr } = require('stdio-napi');
+/// print_stderr("Error occurred!");
+/// ```
 #[napi]
 pub fn print_stderr(text: String) {
     eprint!("{}", text);
     let _ = io::stderr().flush();
 }
 
+/// Prints success message in green bold text to stdout.
+/// 
+/// # Arguments
+/// * `text` - The success message to display
+/// 
+/// # Example
+/// ```javascript
+/// const { print_success } = require('stdio-napi');
+/// print_success("Operation completed successfully!");
+/// ```
 #[napi]
 pub fn print_success(text: String) {
     println!("{}", text.green().bold());
 }
 
+/// Prints error message in red bold text to stderr.
+/// 
+/// # Arguments
+/// * `text` - The error message to display
+/// 
+/// # Example
+/// ```javascript
+/// const { print_error } = require('stdio-napi');
+/// print_error("An error occurred!");
+/// ```
 #[napi]
 pub fn print_error(text: String) {
     eprintln!("{}", text.red().bold());
 }
 
+/// Prints warning message in yellow text to stdout.
+/// 
+/// # Arguments
+/// * `text` - The warning message to display
+/// 
+/// # Example
+/// ```javascript
+/// const { print_warning } = require('stdio-napi');
+/// print_warning("This is a warning!");
+/// ```
 #[napi]
 pub fn print_warning(text: String) {
     println!("{}", text.yellow());
 }
 
+/// Prints info message in blue text to stdout.
+/// 
+/// # Arguments
+/// * `text` - The info message to display
+/// 
+/// # Example
+/// ```javascript
+/// const { print_info } = require('stdio-napi');
+/// print_info("Here is some information.");
+/// ```
 #[napi]
 pub fn print_info(text: String) {
     println!("{}", text.blue());
 }
 
+/// Asynchronously reads a single line from stdin.
+/// 
+/// Reads input from stdin and returns the trimmed line as a string.
+/// 
+/// # Returns
+/// * `Result<String, napi::Error>` - The trimmed line read from stdin
+/// 
+/// # Example
+/// ```javascript
+/// const { read_line } = require('stdio-napi');
+/// const input = await read_line();
+/// console.log("You entered:", input);
+/// ```
 #[napi]
 pub async fn read_line() -> napi::Result<String> {
     let stdin = tokio::io::stdin();
@@ -49,6 +122,21 @@ pub async fn read_line() -> napi::Result<String> {
     Ok(line.trim().to_string())
 }
 
+/// Displays a prompt message and reads user input.
+/// 
+/// Prints the message followed by ": " and waits for user input.
+/// 
+/// # Arguments
+/// * `message` - The prompt message to display
+/// 
+/// # Returns
+/// * `Result<String, napi::Error>` - The user's input
+/// 
+/// # Example
+/// ```javascript
+/// const { prompt } = require('stdio-napi');
+/// const name = await prompt("Enter your name");
+/// ```
 #[napi]
 pub async fn prompt(message: String) -> napi::Result<String> {
     print!("{}: ", message.cyan());
@@ -57,6 +145,20 @@ pub async fn prompt(message: String) -> napi::Result<String> {
     read_line().await
 }
 
+/// Displays a yes/no confirmation prompt.
+/// 
+/// # Arguments
+/// * `message` - The confirmation message to display
+/// * `default` - Optional default value (true for yes, false for no)
+/// 
+/// # Returns
+/// * `Result<bool, napi::Error>` - true for yes, false for no
+/// 
+/// # Example
+/// ```javascript
+/// const { confirm } = require('stdio-napi');
+/// const result = await confirm("Continue?", true);
+/// ```
 #[napi]
 pub async fn confirm(message: String, default: Option<bool>) -> napi::Result<bool> {
     let def = default.unwrap_or(true);
@@ -82,6 +184,18 @@ pub async fn confirm(message: String, default: Option<bool>) -> napi::Result<boo
     Ok(def)
 }
 
+/// Prints a progress bar to stdout.
+/// 
+/// # Arguments
+/// * `current` - The current progress value
+/// * `total` - The total value (100%)
+/// * `width` - Optional width of the progress bar (default: 20 characters)
+/// 
+/// # Example
+/// ```javascript
+/// const { print_progress } = require('stdio-napi');
+/// print_progress(50, 100, 20); // Shows 50% progress
+/// ```
 #[napi]
 pub fn print_progress(current: u32, total: u32, width: Option<u32>) {
     let w = width.unwrap_or(20) as usize;
@@ -106,12 +220,40 @@ pub fn print_progress(current: u32, total: u32, width: Option<u32>) {
     }
 }
 
+/// Returns a spinner animation frame.
+/// 
+/// # Arguments
+/// * `frame` - The frame number (0-9)
+/// 
+/// # Returns
+/// * `String` - The spinner character for the given frame
+/// 
+/// # Example
+/// ```javascript
+/// const { get_spinner_frame } = require('stdio-napi');
+/// const frame = get_spinner_frame(0); // Returns "⠋"
+/// ```
 #[napi]
 pub fn get_spinner_frame(frame: u32) -> String {
     let frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     frames[(frame as usize) % frames.len()].to_string()
 }
 
+/// Reads a password from stdin with optional character masking.
+/// 
+/// Enables raw mode for secure password input.
+/// 
+/// # Arguments
+/// * `mask` - Optional character to display for each typed character
+/// 
+/// # Returns
+/// * `Result<String, napi::Error>` - The entered password
+/// 
+/// # Example
+/// ```javascript
+/// const { read_password } = require('stdio-napi');
+/// const password = await read_password("*"); // Shows * for each character
+/// ```
 #[napi]
 pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
     use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
@@ -168,6 +310,22 @@ pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
     result
 }
 
+/// Displays an interactive selection menu in the terminal.
+/// 
+/// Uses arrow keys to navigate and Enter to select.
+/// 
+/// # Arguments
+/// * `message` - The menu prompt message
+/// * `options` - Vector of options to display
+/// 
+/// # Returns
+/// * `Result<u32, napi::Error>` - The index of the selected option
+/// 
+/// # Example
+/// ```javascript
+/// const { select_menu } = require('stdio-napi');
+/// const index = await select_menu("Choose an option", ["Option 1", "Option 2", "Option 3"]);
+/// ```
 #[napi]
 pub async fn select_menu(message: String, options: Vec<String>) -> napi::Result<u32> {
     use crossterm::event::{self, Event, KeyCode, KeyEvent};
@@ -246,6 +404,19 @@ pub async fn select_menu(message: String, options: Vec<String>) -> napi::Result<
     result
 }
 
+/// Reads multiple lines of input until the delimiter is entered.
+/// 
+/// # Arguments
+/// * `delimiter` - Optional delimiter string (default: "EOF")
+/// 
+/// # Returns
+/// * `Result<String, napi::Error>` - All lines joined with newlines
+/// 
+/// # Example
+/// ```javascript
+/// const { read_multiline } = require('stdio-napi');
+/// const text = await read_multiline("DONE");
+/// ```
 #[napi]
 pub async fn read_multiline(delimiter: Option<String>) -> napi::Result<String> {
     let delim = delimiter.unwrap_or_else(|| "EOF".to_string());

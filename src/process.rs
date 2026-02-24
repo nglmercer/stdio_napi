@@ -14,7 +14,9 @@ use std::os::unix::process::CommandExt;
 #[allow(unused_imports)]
 use std::os::windows::process::CommandExt;
 
-/// Buffer configuration for stream handling
+/// Buffer configuration for stream handling.
+///
+/// Used to configure buffer sizes for process I/O operations.
 #[napi(object)]
 pub struct BufferConfig {
     /// Size of read buffer in bytes (default: 8192)
@@ -35,7 +37,7 @@ impl Default for BufferConfig {
     }
 }
 
-/// Stream event types for process communication
+/// Stream event types for process communication.
 #[napi]
 pub enum StreamEvent {
     /// stdout data received
@@ -48,15 +50,21 @@ pub enum StreamEvent {
     Error,
 }
 
-/// Stream event data
+/// Stream event data for process communication.
 #[napi(object)]
 pub struct StreamEventData {
+    /// The type of event
     pub event: StreamEvent,
+    /// Data associated with the event (if any)
     pub data: Option<String>,
+    /// Exit code (for Exit events)
     pub code: Option<i32>,
 }
 
-/// Managed process handle with streaming capabilities
+/// Managed process handle with streaming capabilities.
+///
+/// This class provides a higher-level interface for process management
+/// with support for streaming stdin/stdout/stderr.
 #[napi]
 pub struct ManagedProcess {
     pid: u32,
@@ -65,7 +73,17 @@ pub struct ManagedProcess {
 
 #[napi]
 impl ManagedProcess {
-    /// Create a new managed process
+    /// Create a new managed process.
+    ///
+    /// # Arguments
+    /// * `command` - The executable to run
+    /// * `args` - Command-line arguments
+    ///
+    /// # Example
+    /// ```javascript
+    /// const { ManagedProcess } = require('stdio-napi');
+    /// const proc = new ManagedProcess("ls", ["-la"]);
+    /// ```
     #[napi(constructor)]
     pub fn new(command: String, args: Vec<String>) -> napi::Result<ManagedProcess> {
         let child = Command::new(&command)
@@ -84,13 +102,19 @@ impl ManagedProcess {
         })
     }
 
-    /// Get the process PID
+    /// Get the process PID.
+    ///
+    /// # Returns
+    /// * `u32` - The process ID
     #[napi]
     pub fn pid(&self) -> u32 {
         self.pid
     }
 
-    /// Read a line from stdout
+    /// Read a line from stdout.
+    ///
+    /// # Returns
+    /// * `Result<Option<String>, napi::Error>` - Line of output or None if closed
     #[napi]
     pub async fn read_stdout_line(&self) -> napi::Result<Option<String>> {
         let mut child_guard = self.child.lock().await;
@@ -111,7 +135,10 @@ impl ManagedProcess {
         }
     }
 
-    /// Read a line from stderr
+    /// Read a line from stderr.
+    ///
+    /// # Returns
+    /// * `Result<Option<String>, napi::Error>` - Line of error output or None if closed
     #[napi]
     pub async fn read_stderr_line(&self) -> napi::Result<Option<String>> {
         let mut child_guard = self.child.lock().await;
@@ -132,7 +159,10 @@ impl ManagedProcess {
         }
     }
 
-    /// Write to stdin
+    /// Write to stdin.
+    ///
+    /// # Arguments
+    /// * `data` - The string to write
     #[napi]
     pub async fn write_stdin(&self, data: String) -> napi::Result<()> {
         let mut child_guard = self.child.lock().await;
@@ -149,7 +179,10 @@ impl ManagedProcess {
         }
     }
 
-    /// Wait for process to complete and get exit status
+    /// Wait for process to complete and get exit status.
+    ///
+    /// # Returns
+    /// * `Result<ProcessStatus, napi::Error>` - The process exit status
     #[napi]
     pub async fn wait(&self) -> napi::Result<ProcessStatus> {
         let mut child_guard = self.child.lock().await;
@@ -166,7 +199,7 @@ impl ManagedProcess {
         }
     }
 
-    /// Kill the process
+    /// Kill the process.
     #[napi]
     pub async fn kill(&self) -> napi::Result<()> {
         let mut child_guard = self.child.lock().await;
@@ -180,12 +213,16 @@ impl ManagedProcess {
     }
 }
 
-/// Spawn options for process execution
+/// Spawn options for process execution.
 #[napi(object)]
 pub struct SpawnOptions {
+    /// The command to execute
     pub command: String,
+    /// Command-line arguments
     pub args: Vec<String>,
+    /// Working directory (optional)
     pub cwd: Option<String>,
+    /// Environment variables (optional)
     pub env: Option<HashMap<String, String>>,
     /// Whether to capture stdout (default: false)
     pub capture_stdout: Option<bool>,
@@ -193,25 +230,46 @@ pub struct SpawnOptions {
     pub capture_stderr: Option<bool>,
 }
 
-/// Process status result
+/// Process status result containing exit information.
 #[napi(object)]
 #[derive(Clone)]
 pub struct ProcessStatus {
+    /// Process ID
     pub pid: u32,
+    /// Whether the process exited successfully (code 0)
     pub success: bool,
+    /// Exit code (None if still running or terminated by signal)
     pub code: Option<i32>,
 }
 
-/// Process output containing stdout and stderr
+/// Process output containing stdout and stderr.
 #[napi(object)]
 pub struct ProcessOutput {
+    /// Standard output content
     pub stdout: String,
+    /// Standard error content
     pub stderr: String,
+    /// Exit code
     pub code: Option<i32>,
+    /// Whether the process was successful
     pub success: bool,
 }
 
-/// Execute a command and wait for completion (async)
+/// Execute a command and wait for completion (async).
+///
+/// # Arguments
+/// * `command` - The command to execute
+/// * `args` - Command-line arguments
+///
+/// # Returns
+/// * `Result<ProcessStatus, napi::Error>` - Process status information
+///
+/// # Example
+/// ```javascript
+/// const { exec_command } = require('stdio-napi');
+/// const status = await exec_command("ls", ["-la"]);
+/// console.log(status.pid, status.code);
+/// ```
 #[napi]
 pub async fn exec_command(command: String, args: Vec<String>) -> napi::Result<ProcessStatus> {
     let mut child = Command::new(&command)
@@ -231,7 +289,24 @@ pub async fn exec_command(command: String, args: Vec<String>) -> napi::Result<Pr
     })
 }
 
-/// Spawn a process with options
+/// Spawn a process with options.
+///
+/// # Arguments
+/// * `options` - Spawn options including command, args, cwd, env
+///
+/// # Returns
+/// * `Result<ProcessStatus, napi::Error>` - Process status information
+///
+/// # Example
+/// ```javascript
+/// const { spawn_with_options } = require('stdio-napi');
+/// const status = await spawn_with_options({
+///   command: "node",
+///   args: ["script.js"],
+///   cwd: "/path/to/dir",
+///   capture_stdout: true
+/// });
+/// ```
 #[napi]
 pub async fn spawn_with_options(options: SpawnOptions) -> napi::Result<ProcessStatus> {
     let mut cmd = Command::new(&options.command);
@@ -273,7 +348,22 @@ pub async fn spawn_with_options(options: SpawnOptions) -> napi::Result<ProcessSt
     })
 }
 
-/// Spawn a process with piped stdio for streaming
+/// Spawn a process with piped stdio for streaming.
+///
+/// # Arguments
+/// * `options` - Spawn options
+///
+/// # Returns
+/// * `Result<ProcessStatus, napi::Error>` - Process status information
+///
+/// # Example
+/// ```javascript
+/// const { spawn_with_pipes } = require('stdio-napi');
+/// const status = await spawn_with_pipes({
+///   command: "node",
+///   args: ["script.js"]
+/// });
+/// ```
 #[napi]
 pub async fn spawn_with_pipes(options: SpawnOptions) -> napi::Result<ProcessStatus> {
     let mut cmd = Command::new(&options.command);
@@ -304,7 +394,20 @@ pub async fn spawn_with_pipes(options: SpawnOptions) -> napi::Result<ProcessStat
     })
 }
 
-/// Execute a command synchronously and return output
+/// Execute a command synchronously and return output.
+///
+/// # Arguments
+/// * `command` - The command to execute
+///
+/// # Returns
+/// * `Result<ProcessOutput, napi::Error>` - Combined stdout and stderr
+///
+/// # Example
+/// ```javascript
+/// const { exec_sync } = require('stdio-napi');
+/// const output = exec_sync("ls");
+/// console.log(output.stdout);
+/// ```
 #[napi]
 pub fn exec_sync(command: String) -> napi::Result<ProcessOutput> {
     let output = StdCommand::new(&command)
@@ -322,7 +425,20 @@ pub fn exec_sync(command: String) -> napi::Result<ProcessOutput> {
     })
 }
 
-/// Execute a command with arguments synchronously
+/// Execute a command with arguments synchronously.
+///
+/// # Arguments
+/// * `command` - The command to execute
+/// * `args` - Command-line arguments
+///
+/// # Returns
+/// * `Result<ProcessOutput, napi::Error>` - Combined stdout and stderr
+///
+/// # Example
+/// ```javascript
+/// const { exec_sync_with_args } = require('stdio-napi');
+/// const output = exec_sync_with_args("ls", ["-la", "/tmp"]);
+/// ```
 #[napi]
 pub fn exec_sync_with_args(command: String, args: Vec<String>) -> napi::Result<ProcessOutput> {
     let output = StdCommand::new(&command)
@@ -341,19 +457,56 @@ pub fn exec_sync_with_args(command: String, args: Vec<String>) -> napi::Result<P
     })
 }
 
-/// Shell escape a string for safe command execution
+/// Shell escape a string for safe command execution.
+///
+/// # Arguments
+/// * `input` - The string to escape
+///
+/// # Returns
+/// * `String` - The escaped string
+///
+/// # Example
+/// ```javascript
+/// const { shell_escape } = require('stdio-napi');
+/// const escaped = shell_escape("hello world"); // Returns 'hello world'
+/// ```
 #[napi]
 pub fn shell_escape(input: String) -> String {
     format!("'{}'", input.replace('\'', "'\\''"))
 }
 
-/// Shell escape arguments for safe command execution
+/// Shell escape arguments for safe command execution.
+///
+/// # Arguments
+/// * `args` - Vector of strings to escape
+///
+/// # Returns
+/// * `Vec<String>` - Vector of escaped strings
+///
+/// # Example
+/// ```javascript
+/// const { shell_escape_args } = require('stdio-napi');
+/// const escaped = shell_escape_args(["arg1", "arg 2"]);
+/// ```
 #[napi]
 pub fn shell_escape_args(args: Vec<String>) -> Vec<String> {
     args.into_iter().map(shell_escape).collect()
 }
 
-/// Kill a process by PID
+/// Kill a process by PID.
+///
+/// # Arguments
+/// * `pid` - Process ID to kill
+/// * `signal` - Optional signal name ("SIGKILL", "SIGTERM", "SIGINT", "SIGHUP")
+///
+/// # Returns
+/// * `Result<bool, napi::Error>` - True if successful
+///
+/// # Example
+/// ```javascript
+/// const { kill_process } = require('stdio-napi');
+/// await kill_process(12345, "SIGTERM");
+/// ```
 #[napi]
 pub async fn kill_process(pid: u32, signal: Option<String>) -> napi::Result<bool> {
     #[cfg(unix)]
