@@ -4,8 +4,6 @@
 //! allowing graceful shutdown, process termination, and signal-based communication.
 
 use napi_derive::napi;
-use std::sync::Arc;
-use tokio::sync::{broadcast, Mutex};
 
 #[cfg(unix)]
 use {
@@ -219,34 +217,73 @@ pub fn send_signal(pid: u32, signal: String) -> napi::Result<bool> {
 /// * `SignalInfo` - Information about the signal
 #[napi]
 pub fn get_signal_info(signal: String) -> napi::Result<SignalInfo> {
-    #[cfg(unix)]
-    {
-        let sig_num = match signal.to_lowercase().as_str() {
-            "interrupt" | "sigint" => signal::SIGINT,
-            "terminate" | "sigterm" => signal::SIGTERM,
-            "kill" | "sigkill" => signal::SIGKILL,
-            "user1" | "sigusr1" => signal::SIGUSR1,
-            "user2" | "sigusr2" => signal::SIGUSR2,
-            "window" | "sigwinch" => signal::SIGWINCH,
-            "continue" | "sigcont" => signal::SIGCONT,
-            "stop" | "sigstop" => signal::SIGSTOP,
-            _ => {
-                return Err(napi::Error::from_reason(format!(
-                    "Unknown signal: {}",
-                    signal
-                )))
-            }
-        };
+    let sig_lower = signal.to_lowercase();
 
-        Ok(signal_to_info(sig_num))
-    }
-
-    #[cfg(windows)]
-    {
-        let _ = signal;
-        Err(napi::Error::from_reason(
-            "Signal info not available on Windows".to_string(),
-        ))
+    match sig_lower.as_str() {
+        "interrupt" | "sigint" => Ok(SignalInfo {
+            signal: "SIGINT".to_string(),
+            number: 2,
+            description: "Interrupt signal (Ctrl+C)".to_string(),
+        }),
+        "terminate" | "sigterm" => Ok(SignalInfo {
+            signal: "SIGTERM".to_string(),
+            number: 15,
+            description: "Termination signal".to_string(),
+        }),
+        "kill" | "sigkill" => Ok(SignalInfo {
+            signal: "SIGKILL".to_string(),
+            number: 9,
+            description: "Kill signal (cannot be caught)".to_string(),
+        }),
+        #[cfg(unix)]
+        "user1" | "sigusr1" => {
+            use signal_hook::consts::signal::SIGUSR1;
+            Ok(SignalInfo {
+                signal: "SIGUSR1".to_string(),
+                number: SIGUSR1,
+                description: "User-defined signal 1".to_string(),
+            })
+        }
+        #[cfg(unix)]
+        "user2" | "sigusr2" => {
+            use signal_hook::consts::signal::SIGUSR2;
+            Ok(SignalInfo {
+                signal: "SIGUSR2".to_string(),
+                number: SIGUSR2,
+                description: "User-defined signal 2".to_string(),
+            })
+        }
+        #[cfg(unix)]
+        "window" | "sigwinch" => {
+            use signal_hook::consts::signal::SIGWINCH;
+            Ok(SignalInfo {
+                signal: "SIGWINCH".to_string(),
+                number: SIGWINCH,
+                description: "Window size change".to_string(),
+            })
+        }
+        #[cfg(unix)]
+        "continue" | "sigcont" => {
+            use signal_hook::consts::signal::SIGCONT;
+            Ok(SignalInfo {
+                signal: "SIGCONT".to_string(),
+                number: SIGCONT,
+                description: "Continue signal".to_string(),
+            })
+        }
+        #[cfg(unix)]
+        "stop" | "sigstop" => {
+            use signal_hook::consts::signal::SIGSTOP;
+            Ok(SignalInfo {
+                signal: "SIGSTOP".to_string(),
+                number: SIGSTOP,
+                description: "Stop signal".to_string(),
+            })
+        }
+        _ => Err(napi::Error::from_reason(format!(
+            "Unknown signal: {}",
+            signal
+        ))),
     }
 }
 
@@ -373,24 +410,26 @@ fn signal_to_info(sig: i32) -> SignalInfo {
 /// Signal constants for reference.
 #[napi]
 pub fn get_supported_signals() -> Vec<SignalInfo> {
-    #[cfg(unix)]
-    {
-        vec![
-            signal_to_info(signal::SIGINT),
-            signal_to_info(signal::SIGTERM),
-            signal_to_info(signal::SIGKILL),
-            signal_to_info(signal::SIGUSR1),
-            signal_to_info(signal::SIGUSR2),
-            signal_to_info(signal::SIGWINCH),
-            signal_to_info(signal::SIGCONT),
-            signal_to_info(signal::SIGSTOP),
-            signal_to_info(signal::SIGHUP),
-            signal_to_info(signal::SIGQUIT),
-        ]
-    }
-
-    #[cfg(windows)]
-    {
-        vec![]
-    }
+    vec![
+        SignalInfo {
+            signal: "SIGINT".to_string(),
+            number: 2,
+            description: "Interrupt signal (Ctrl+C)".to_string(),
+        },
+        SignalInfo {
+            signal: "SIGTERM".to_string(),
+            number: 15,
+            description: "Termination signal".to_string(),
+        },
+        SignalInfo {
+            signal: "SIGKILL".to_string(),
+            number: 9,
+            description: "Kill signal (cannot be caught)".to_string(),
+        },
+        SignalInfo {
+            signal: "SIGHUP".to_string(),
+            number: 1,
+            description: "Hangup signal".to_string(),
+        },
+    ]
 }

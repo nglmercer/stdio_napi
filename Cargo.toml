@@ -39,12 +39,15 @@ nix = { version = "0.29", features = ["signal", "process", "term"] }
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [
   "wincon",
+  "consoleapi",
+  "processenv",
   "processthreadsapi",
   "handleapi",
   "jobapi2",
   "namedpipeapi",
   "fileapi",
   "winbase",
+  "winnt",
   "winerror",
 ] }
 

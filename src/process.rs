@@ -282,23 +282,56 @@ pub struct ProcessOutput {
 /// ```
 #[napi]
 pub async fn exec_command(command: String, args: Vec<String>) -> napi::Result<ProcessStatus> {
-    let mut child = Command::new(&command)
-        .args(&args)
-        .stdout(StdStdio::inherit())
-        .stderr(StdStdio::inherit())
-        .spawn()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to spawn '{}': {}", command, e)))?;
+    #[cfg(windows)]
+    {
+        let mut full_command = command.clone();
+        for arg in &args {
+            full_command.push(' ');
+            full_command.push_str(arg);
+        }
+        let mut child = Command::new("cmd")
+            .args(["/C", &full_command])
+            .stdout(StdStdio::inherit())
+            .stderr(StdStdio::inherit())
+            .spawn()
+            .map_err(|e| {
+                napi::Error::from_reason(format!("Failed to spawn '{}': {}", command, e))
+            })?;
 
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
 
-    Ok(ProcessStatus {
-        pid: child.id().unwrap_or(0),
-        success: status.success(),
-        code: status.code(),
-    })
+        Ok(ProcessStatus {
+            pid: child.id().unwrap_or(0),
+            success: status.success(),
+            code: status.code(),
+        })
+    }
+
+    #[cfg(unix)]
+    {
+        let mut child = Command::new(&command)
+            .args(&args)
+            .stdout(StdStdio::inherit())
+            .stderr(StdStdio::inherit())
+            .spawn()
+            .map_err(|e| {
+                napi::Error::from_reason(format!("Failed to spawn '{}': {}", command, e))
+            })?;
+
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
+
+        Ok(ProcessStatus {
+            pid: child.id().unwrap_or(0),
+            success: status.success(),
+            code: status.code(),
+        })
+    }
 }
 
 /// Spawn a process with options.
@@ -321,46 +354,98 @@ pub async fn exec_command(command: String, args: Vec<String>) -> napi::Result<Pr
 /// ```
 #[napi]
 pub async fn spawn_with_options(options: SpawnOptions) -> napi::Result<ProcessStatus> {
-    let mut cmd = Command::new(&options.command);
-    cmd.args(&options.args);
+    #[cfg(windows)]
+    {
+        let mut full_command = options.command.clone();
+        for arg in &options.args {
+            full_command.push(' ');
+            full_command.push_str(arg);
+        }
+        let mut cmd = Command::new("cmd");
+        cmd.args(["/C", &full_command]);
 
-    if let Some(cwd) = &options.cwd {
-        cmd.current_dir(cwd);
+        if let Some(cwd) = &options.cwd {
+            cmd.current_dir(cwd);
+        }
+
+        if let Some(env) = &options.env {
+            cmd.envs(env);
+        }
+
+        let capture_stdout = options.capture_stdout.unwrap_or(false);
+        let capture_stderr = options.capture_stderr.unwrap_or(false);
+
+        if capture_stdout {
+            cmd.stdout(StdStdio::piped());
+        } else {
+            cmd.stdout(StdStdio::inherit());
+        }
+
+        if capture_stderr {
+            cmd.stderr(StdStdio::piped());
+        } else {
+            cmd.stderr(StdStdio::inherit());
+        }
+
+        let mut child = cmd.spawn().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e))
+        })?;
+
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
+
+        Ok(ProcessStatus {
+            pid: child.id().unwrap_or(0),
+            success: status.success(),
+            code: status.code(),
+        })
     }
 
-    if let Some(env) = &options.env {
-        cmd.envs(env);
+    #[cfg(unix)]
+    {
+        let mut cmd = Command::new(&options.command);
+        cmd.args(&options.args);
+
+        if let Some(cwd) = &options.cwd {
+            cmd.current_dir(cwd);
+        }
+
+        if let Some(env) = &options.env {
+            cmd.envs(env);
+        }
+
+        let capture_stdout = options.capture_stdout.unwrap_or(false);
+        let capture_stderr = options.capture_stderr.unwrap_or(false);
+
+        if capture_stdout {
+            cmd.stdout(StdStdio::piped());
+        } else {
+            cmd.stdout(StdStdio::inherit());
+        }
+
+        if capture_stderr {
+            cmd.stderr(StdStdio::piped());
+        } else {
+            cmd.stderr(StdStdio::inherit());
+        }
+
+        let mut child = cmd.spawn().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e))
+        })?;
+
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
+
+        Ok(ProcessStatus {
+            pid: child.id().unwrap_or(0),
+            success: status.success(),
+            code: status.code(),
+        })
     }
-
-    let capture_stdout = options.capture_stdout.unwrap_or(false);
-    let capture_stderr = options.capture_stderr.unwrap_or(false);
-
-    if capture_stdout {
-        cmd.stdout(StdStdio::piped());
-    } else {
-        cmd.stdout(StdStdio::inherit());
-    }
-
-    if capture_stderr {
-        cmd.stderr(StdStdio::piped());
-    } else {
-        cmd.stderr(StdStdio::inherit());
-    }
-
-    let mut child = cmd.spawn().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to spawn '{}': {}", options.command, e))
-    })?;
-
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| napi::Error::from_reason(format!("Failed to wait for process: {}", e)))?;
-
-    Ok(ProcessStatus {
-        pid: child.id().unwrap_or(0),
-        success: status.success(),
-        code: status.code(),
-    })
 }
 
 /// Spawn a process with piped stdio for streaming.
@@ -429,31 +514,82 @@ pub async fn spawn_with_pipes(options: SpawnOptions) -> napi::Result<ProcessStat
 /// ```
 #[napi]
 pub fn exec_sync(command: String, args: Option<Vec<String>>) -> napi::Result<ProcessOutput> {
-    let mut cmd = StdCommand::new(&command);
-    if let Some(ref args) = args {
-        cmd.args(args);
+    #[cfg(windows)]
+    {
+        let mut full_command = command.clone();
+        if let Some(ref args) = args {
+            for arg in args {
+                full_command.push(' ');
+                full_command.push_str(arg);
+            }
+        }
+        let mut cmd = StdCommand::new("cmd");
+        cmd.args(["/C", &full_command]);
+
+        // Spawn the process to get PID, then wait for output
+        let child = cmd.spawn().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e))
+        })?;
+
+        let pid = child.id();
+        let output = child.wait_with_output().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
+        })?;
+
+        // Check if command succeeded, throw if not
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(napi::Error::from_reason(format!(
+                "Command failed: {} {}",
+                command,
+                if !stderr.is_empty() {
+                    format!(" - {}", stderr)
+                } else {
+                    String::new()
+                }
+            )));
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        Ok(ProcessOutput {
+            pid,
+            stdout,
+            stderr,
+            code: output.status.code(),
+            success: output.status.success(),
+        })
     }
 
-    // Spawn the process to get PID, then wait for output
-    let child = cmd
-        .spawn()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e)))?;
+    #[cfg(unix)]
+    {
+        let mut cmd = StdCommand::new(&command);
+        if let Some(ref args) = args {
+            cmd.args(args);
+        }
 
-    let pid = child.id();
-    let output = child.wait_with_output().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
-    })?;
+        // Spawn the process to get PID, then wait for output
+        let child = cmd.spawn().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e))
+        })?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let pid = child.id();
+        let output = child.wait_with_output().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
+        })?;
 
-    Ok(ProcessOutput {
-        pid,
-        stdout,
-        stderr,
-        code: output.status.code(),
-        success: output.status.success(),
-    })
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        Ok(ProcessOutput {
+            pid,
+            stdout,
+            stderr,
+            code: output.status.code(),
+            success: output.status.success(),
+        })
+    }
 }
 
 /// Execute a command with arguments synchronously.
@@ -473,26 +609,72 @@ pub fn exec_sync(command: String, args: Option<Vec<String>>) -> napi::Result<Pro
 /// ```
 #[napi]
 pub fn exec_sync_with_args(command: String, args: Vec<String>) -> napi::Result<ProcessOutput> {
-    let child = StdCommand::new(&command)
-        .args(&args)
-        .spawn()
-        .map_err(|e| napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e)))?;
+    // On Windows, use cmd.exe to run shell commands
+    #[cfg(windows)]
+    {
+        let mut full_command = command.clone();
+        for arg in &args {
+            full_command.push(' ');
+            full_command.push_str(arg);
+        }
+        let mut cmd = StdCommand::new("cmd");
+        let child = cmd.args(["/C", &full_command]).spawn().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e))
+        })?;
 
-    let pid = child.id();
-    let output = child.wait_with_output().map_err(|e| {
-        napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
-    })?;
+        let pid = child.id();
+        let output = child.wait_with_output().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
+        })?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        // Check if command succeeded, throw if not
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(napi::Error::from_reason(format!(
+                "Command failed: {} {}",
+                command,
+                if !stderr.is_empty() {
+                    format!(" - {}", stderr)
+                } else {
+                    String::new()
+                }
+            )));
+        }
 
-    Ok(ProcessOutput {
-        pid,
-        stdout,
-        stderr,
-        code: output.status.code(),
-        success: output.status.success(),
-    })
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        Ok(ProcessOutput {
+            pid,
+            stdout,
+            stderr,
+            code: output.status.code(),
+            success: output.status.success(),
+        })
+    }
+
+    #[cfg(unix)]
+    {
+        let child = StdCommand::new(&command).args(&args).spawn().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to execute '{}': {}", command, e))
+        })?;
+
+        let pid = child.id();
+        let output = child.wait_with_output().map_err(|e| {
+            napi::Error::from_reason(format!("Failed to wait for '{}': {}", command, e))
+        })?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        Ok(ProcessOutput {
+            pid,
+            stdout,
+            stderr,
+            code: output.status.code(),
+            success: output.status.success(),
+        })
+    }
 }
 
 /// Shell escape a string for safe command execution.
@@ -579,7 +761,7 @@ pub async fn kill_process(pid: u32, signal: Option<String>) -> napi::Result<bool
             ""
         };
         let output = StdCommand::new("taskkill")
-            .args(&[force_flag, "/PID", &pid.to_string()])
+            .args([force_flag, "/PID", &pid.to_string()])
             .output()
             .map_err(|e| {
                 napi::Error::from_reason(format!("Failed to kill process {}: {}", pid, e))

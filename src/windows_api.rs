@@ -7,9 +7,6 @@
 
 use napi_derive::napi;
 
-#[cfg(windows)]
-use std::collections::HashMap;
-
 /// Windows console buffer information.
 #[napi(object)]
 pub struct ConsoleBufferInfo {
@@ -25,7 +22,7 @@ pub struct ConsoleBufferInfo {
     pub max_window_size: Vec<u32>,
 }
 
-/// Windows console mode flags.
+/// Windows console m       ode flags.
 #[napi(object)]
 pub struct ConsoleMode {
     /// Input mode flags
@@ -77,8 +74,9 @@ pub fn get_console_buffer_info() -> napi::Result<ConsoleBufferInfo> {
         use std::mem::MaybeUninit;
 
         unsafe {
-            let handle = winapi::um::wincon::GetStdHandle(winapi::um::wincon::STD_OUTPUT_HANDLE);
-            if handle == winapi::um::wincon::INVALID_HANDLE_VALUE {
+            let handle =
+                winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_OUTPUT_HANDLE);
+            if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(napi::Error::from_reason(
                     "Failed to get console handle".to_string(),
                 ));
@@ -129,15 +127,16 @@ pub fn get_console_input_mode() -> napi::Result<ConsoleMode> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = winapi::um::wincon::GetStdHandle(winapi::um::wincon::STD_INPUT_HANDLE);
-            if handle == winapi::um::wincon::INVALID_HANDLE_VALUE {
+            let handle =
+                winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_INPUT_HANDLE);
+            if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(napi::Error::from_reason(
                     "Failed to get console handle".to_string(),
                 ));
             }
 
             let mut mode: u32 = 0;
-            if winapi::um::wincon::GetConsoleMode(handle, &mut mode) == 0 {
+            if winapi::um::consoleapi::GetConsoleMode(handle, &mut mode) == 0 {
                 return Err(napi::Error::from_reason(
                     "Failed to get console mode".to_string(),
                 ));
@@ -145,10 +144,10 @@ pub fn get_console_input_mode() -> napi::Result<ConsoleMode> {
 
             // Also get output mode
             let output_handle =
-                winapi::um::wincon::GetStdHandle(winapi::um::wincon::STD_OUTPUT_HANDLE);
+                winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_OUTPUT_HANDLE);
             let mut output_mode: u32 = 0;
-            if output_handle != winapi::um::wincon::INVALID_HANDLE_VALUE {
-                let _ = winapi::um::wincon::GetConsoleMode(output_handle, &mut output_mode);
+            if output_handle != winapi::um::handleapi::INVALID_HANDLE_VALUE {
+                let _ = winapi::um::consoleapi::GetConsoleMode(output_handle, &mut output_mode);
             }
 
             Ok(ConsoleMode {
@@ -172,14 +171,15 @@ pub fn set_console_input_mode(mode: u32) -> napi::Result<()> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = winapi::um::wincon::GetStdHandle(winapi::um::wincon::STD_INPUT_HANDLE);
-            if handle == winapi::um::wincon::INVALID_HANDLE_VALUE {
+            let handle =
+                winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_INPUT_HANDLE);
+            if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(napi::Error::from_reason(
                     "Failed to get console handle".to_string(),
                 ));
             }
 
-            if winapi::um::wincon::SetConsoleMode(handle, mode) == 0 {
+            if winapi::um::consoleapi::SetConsoleMode(handle, mode) == 0 {
                 return Err(napi::Error::from_reason(
                     "Failed to set console mode".to_string(),
                 ));
@@ -204,14 +204,15 @@ pub fn set_console_output_mode(mode: u32) -> napi::Result<()> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = winapi::um::wincon::GetStdHandle(winapi::um::wincon::STD_OUTPUT_HANDLE);
-            if handle == winapi::um::wincon::INVALID_HANDLE_VALUE {
+            let handle =
+                winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_OUTPUT_HANDLE);
+            if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(napi::Error::from_reason(
                     "Failed to get console handle".to_string(),
                 ));
             }
 
-            if winapi::um::wincon::SetConsoleMode(handle, mode) == 0 {
+            if winapi::um::consoleapi::SetConsoleMode(handle, mode) == 0 {
                 return Err(napi::Error::from_reason(
                     "Failed to set console mode".to_string(),
                 ));
@@ -253,8 +254,9 @@ pub fn set_console_text_color(color: u32) -> napi::Result<()> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = winapi::um::wincon::GetStdHandle(winapi::um::wincon::STD_OUTPUT_HANDLE);
-            if handle == winapi::um::wincon::INVALID_HANDLE_VALUE {
+            let handle =
+                winapi::um::processenv::GetStdHandle(winapi::um::winbase::STD_OUTPUT_HANDLE);
+            if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(napi::Error::from_reason(
                     "Failed to get console handle".to_string(),
                 ));
@@ -339,11 +341,11 @@ pub fn assign_process_to_job(job_handle: i64, process_id: u32) -> napi::Result<(
     #[cfg(windows)]
     {
         unsafe {
-            let handle = job_handle as *mut std::ffi::c_void;
+            let handle = job_handle as *mut winapi::ctypes::c_void;
 
             // Open the process
             let process = winapi::um::processthreadsapi::OpenProcess(
-                winapi::um::winbase::PROCESS_SET_QUOTA | winapi::um::winbase::PROCESS_TERMINATE,
+                winapi::um::winnt::PROCESS_SET_QUOTA | winapi::um::winnt::PROCESS_TERMINATE,
                 0,
                 process_id,
             );
@@ -385,7 +387,7 @@ pub fn terminate_job_object(job_handle: i64, exit_code: u32) -> napi::Result<()>
     #[cfg(windows)]
     {
         unsafe {
-            let handle = job_handle as *mut std::ffi::c_void;
+            let handle = job_handle as *mut winapi::ctypes::c_void;
 
             if winapi::um::jobapi2::TerminateJobObject(handle, exit_code) == 0 {
                 return Err(napi::Error::from_reason(format!(
@@ -414,7 +416,7 @@ pub fn close_job_object(job_handle: i64) -> napi::Result<()> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = job_handle as *mut std::ffi::c_void;
+            let handle = job_handle as *mut winapi::ctypes::c_void;
             if winapi::um::handleapi::CloseHandle(handle) == 0 {
                 return Err(napi::Error::from_reason(format!(
                     "Failed to close job object: {}",
@@ -461,12 +463,12 @@ pub fn create_named_pipe(name: String, buffer_size: u32) -> napi::Result<i64> {
             .collect();
 
         unsafe {
-            let handle = winapi::um::namedpipe::CreateNamedPipeW(
+            let handle = winapi::um::namedpipeapi::CreateNamedPipeW(
                 wide_name.as_ptr(),
-                winapi::um::namedpipe::PIPE_ACCESS_DUPLEX,
-                winapi::um::namedpipe::PIPE_TYPE_MESSAGE
-                    | winapi::um::namedpipe::PIPE_READMODE_MESSAGE
-                    | winapi::um::namedpipe::PIPE_WAIT,
+                winapi::um::winbase::PIPE_ACCESS_DUPLEX,
+                winapi::um::winbase::PIPE_TYPE_MESSAGE
+                    | winapi::um::winbase::PIPE_READMODE_MESSAGE
+                    | winapi::um::winbase::PIPE_WAIT,
                 1, // Max instances
                 buffer_size,
                 buffer_size,
@@ -474,7 +476,7 @@ pub fn create_named_pipe(name: String, buffer_size: u32) -> napi::Result<i64> {
                 std::ptr::null_mut(),
             );
 
-            if handle == winapi::um::namedpipe::INVALID_HANDLE_VALUE {
+            if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
                 return Err(napi::Error::from_reason(format!(
                     "Failed to create named pipe: {}",
                     std::io::Error::last_os_error()
@@ -501,12 +503,12 @@ pub fn connect_named_pipe(pipe_handle: i64) -> napi::Result<()> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = pipe_handle as *mut std::ffi::c_void;
+            let handle = pipe_handle as *mut winapi::ctypes::c_void;
 
-            if winapi::um::namedpipe::ConnectNamedPipe(handle, std::ptr::null_mut()) == 0 {
+            if winapi::um::namedpipeapi::ConnectNamedPipe(handle, std::ptr::null_mut()) == 0 {
                 let error = std::io::Error::last_os_error();
-                // ERROR_PIPE_CONNECTED is OK - means already connected
-                if error.raw_os_error() != Some(winapi::um::winerror::ERROR_PIPE_CONNECTED as i32) {
+                // ERROR_PIPE_CONNECTED (535) is OK - means already connected
+                if error.raw_os_error() != Some(535) {
                     return Err(napi::Error::from_reason(format!(
                         "Failed to connect to named pipe: {}",
                         error
@@ -541,7 +543,7 @@ pub fn wait_named_pipe(name: String, timeout_ms: u32) -> napi::Result<()> {
             .collect();
 
         unsafe {
-            if winapi::um::namedpipe::WaitNamedPipeW(wide_name.as_ptr(), timeout_ms) == 0 {
+            if winapi::um::namedpipeapi::WaitNamedPipeW(wide_name.as_ptr(), timeout_ms) == 0 {
                 return Err(napi::Error::from_reason(format!(
                     "Failed to wait for named pipe: {}",
                     std::io::Error::last_os_error()
@@ -568,13 +570,13 @@ pub fn read_named_pipe(pipe_handle: i64, size: u32) -> napi::Result<Vec<u8>> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = pipe_handle as *mut std::ffi::c_void;
+            let handle = pipe_handle as *mut winapi::ctypes::c_void;
             let mut buffer: Vec<u8> = vec![0; size as usize];
             let mut bytes_read: u32 = 0;
 
             if winapi::um::fileapi::ReadFile(
                 handle,
-                buffer.as_mut_ptr() as *mut std::ffi::c_void,
+                buffer.as_mut_ptr() as *mut winapi::ctypes::c_void,
                 size,
                 &mut bytes_read,
                 std::ptr::null_mut(),
@@ -607,12 +609,12 @@ pub fn write_named_pipe(pipe_handle: i64, data: Vec<u8>) -> napi::Result<u32> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = pipe_handle as *mut std::ffi::c_void;
+            let handle = pipe_handle as *mut winapi::ctypes::c_void;
             let mut bytes_written: u32 = 0;
 
             if winapi::um::fileapi::WriteFile(
                 handle,
-                data.as_ptr() as *const std::ffi::c_void,
+                data.as_ptr() as *const winapi::ctypes::c_void,
                 data.len() as u32,
                 &mut bytes_written,
                 std::ptr::null_mut(),
@@ -644,7 +646,7 @@ pub fn close_named_pipe(pipe_handle: i64) -> napi::Result<()> {
     #[cfg(windows)]
     {
         unsafe {
-            let handle = pipe_handle as *mut std::ffi::c_void;
+            let handle = pipe_handle as *mut winapi::ctypes::c_void;
             if winapi::um::handleapi::CloseHandle(handle) == 0 {
                 return Err(napi::Error::from_reason(format!(
                     "Failed to close named pipe: {}",
