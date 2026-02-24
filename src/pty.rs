@@ -73,6 +73,15 @@ pub fn open_pty(config: Option<PtyConfig>) -> napi::Result<PtyProcessInfo> {
         let mut slave_fd: libc::c_int = 0;
 
         unsafe {
+            #[cfg(target_os = "macos")]
+            let result = libc::openpty(
+                &mut master_fd,
+                &mut slave_fd,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                &mut size,
+            );
+            #[cfg(not(target_os = "macos"))]
             let result = libc::openpty(
                 &mut master_fd,
                 &mut slave_fd,
@@ -90,15 +99,23 @@ pub fn open_pty(config: Option<PtyConfig>) -> napi::Result<PtyProcessInfo> {
         }
 
         let pts_name = unsafe {
-            let mut buf: [libc::c_char; 1024] = [0; 1024];
-            if libc::ptsname_r(slave_fd, buf.as_mut_ptr(), 1024) == 0 {
-                Some(
-                    std::ffi::CStr::from_ptr(buf.as_ptr())
-                        .to_string_lossy()
-                        .into_owned(),
-                )
-            } else {
-                None
+            #[cfg(target_os = "linux")]
+            {
+                let mut buf: [libc::c_char; 1024] = [0; 1024];
+                if libc::ptsname_r(slave_fd, buf.as_mut_ptr(), 1024) == 0 {
+                    Some(
+                        std::ffi::CStr::from_ptr(buf.as_ptr())
+                            .to_string_lossy()
+                            .into_owned(),
+                    )
+                } else {
+                    None
+                }
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                libc::ptsname(slave_fd)
+                    .map(|ptr| std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned())
             }
         };
 
@@ -251,15 +268,24 @@ pub fn get_pty_name(fd: u32) -> napi::Result<String> {
     #[cfg(unix)]
     {
         unsafe {
-            let mut buf: [libc::c_char; 1024] = [0; 1024];
-            if libc::ptsname_r(fd as libc::c_int, buf.as_mut_ptr(), 1024) == 0 {
-                Ok(std::ffi::CStr::from_ptr(buf.as_ptr())
-                    .to_string_lossy()
-                    .into_owned())
-            } else {
-                Err(napi::Error::from_reason(
-                    "Failed to get PTY name".to_string(),
-                ))
+            #[cfg(target_os = "linux")]
+            {
+                let mut buf: [libc::c_char; 1024] = [0; 1024];
+                if libc::ptsname_r(fd as libc::c_int, buf.as_mut_ptr(), 1024) == 0 {
+                    Ok(std::ffi::CStr::from_ptr(buf.as_ptr())
+                        .to_string_lossy()
+                        .into_owned())
+                } else {
+                    Err(napi::Error::from_reason(
+                        "Failed to get PTY name".to_string(),
+                    ))
+                }
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                libc::ptsname(fd as libc::c_int)
+                    .map(|ptr| std::ffi::CStr::from_ptr(ptr).to_string_lossy().into_owned())
+                    .ok_or_else(|| napi::Error::from_reason("Failed to get PTY name".to_string()))
             }
         }
     }
