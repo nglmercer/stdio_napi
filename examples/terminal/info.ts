@@ -8,13 +8,11 @@
 import {
   getTerminalSize,
   getTerminalInfo,
-  clearScreen,
   setTerminalTitle,
   isStdoutTty,
   isStdinTty,
   printInfo,
   printSuccess,
-  printWarning,
 } from "../../index.js";
 
 function main() {
@@ -26,8 +24,7 @@ function main() {
 
   // Get detailed terminal info
   const info = getTerminalInfo();
-  printInfo(`Terminal type: ${info.terminal_type}`);
-  printInfo(`Is interactive: ${info.is_interactive}`);
+  console.log(info);
 
   // Check if running in a TTY
   printInfo(`\nStdout is TTY: ${isStdoutTty()}`);

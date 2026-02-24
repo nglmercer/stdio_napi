@@ -1,61 +1,54 @@
 /**
- * Process Builder Example
+ * Process Builder Configuration Example
  * 
- * Demonstrates the ProcessBuilder fluent API for building commands.
+ * Demonstrates the ProcessBuilder API for building commands.
  * Run: bun run examples/process/builder.ts
  */
 
-import { ProcessBuilder, printInfo, printSuccess, printError } from "../../index.js";
+import { ProcessBuilder, printInfo, printSuccess } from "../../index.js";
 
-async function main() {
+function main() {
   printInfo("=== Process Builder Demo ===\n");
 
-  // Example 1: Basic builder
+  // Example 1: Basic command
   printInfo("Example 1: Basic command");
   const basic = new ProcessBuilder("echo");
   basic.arg("Hello from ProcessBuilder!");
-  const result1 = await basic.spawn();
-  if (result1.success) {
-    printSuccess("✓ Basic builder succeeded");
-  }
+  printSuccess(`Command: ${basic.getCommand()}`);
+  printSuccess(`Args: ${JSON.stringify(basic.getArgs())}`);
 
-  // Example 2: With arguments
+  // Example 2: Multiple arguments
   printInfo("\nExample 2: Multiple arguments");
-  const withArgs = new ProcessBuilder("echo")
-    .args(["Hello", "World", "from", "stdio-napi"]);
-  const result2 = await withArgs.spawn();
-  if (result2.success) {
-    printSuccess("✓ Multiple args succeeded");
-  }
+  const withArgs = new ProcessBuilder("echo");
+  withArgs.args(["Hello", "World", "from", "stdio-napi"]);
+  printSuccess(`Command: ${withArgs.getCommand()}`);
+  printSuccess(`Args: ${JSON.stringify(withArgs.getArgs())}`);
 
-  // Example 3: With environment variables
+  // Example 3: Environment variables
   printInfo("\nExample 3: Environment variables");
-  const withEnv = new ProcessBuilder("sh")
-    .args(["-c", "echo $GREETING $NAME"])
-    .env("GREETING", "Hello")
-    .env("NAME", "Developer");
-  const result3 = await withEnv.spawn();
-  if (result3.success) {
-    printSuccess("✓ Environment variables worked");
-  }
+  const withEnv = new ProcessBuilder("sh");
+  withEnv.args(["-c", "echo $GREETING"]);
+  withEnv.env("GREETING", "Hello");
+  withEnv.env("NAME", "Developer");
+  printSuccess(`Command: ${withEnv.getCommand()}`);
+  printSuccess(`CWD: ${withEnv.getCwd()}`);
 
-  // Example 4: With working directory
+  // Example 4: Working directory
   printInfo("\nExample 4: Working directory");
-  const withCwd = new ProcessBuilder("pwd").cwd("/tmp");
-  const result4 = await withCwd.spawn();
-  if (result4.success) {
-    printSuccess("✓ Working directory changed");
-  }
+  const withCwd = new ProcessBuilder("ls");
+  withCwd.cwd("/tmp");
+  printSuccess(`CWD set to: ${withCwd.getCwd()}`);
 
-  // Example 5: Capture output
-  printInfo("\nExample 5: Capture stdout");
-  const capture = new ProcessBuilder("echo")
-    .arg("This is captured output")
-    .captureStdout(true);
-  const result5 = await capture.spawn();
-  if (result5.stdout) {
-    printSuccess(`✓ Captured: ${result5.stdout.trim()}`);
-  }
+  // Example 5: Capture options
+  printInfo("\nExample 5: Output capture options");
+  const capture = new ProcessBuilder("echo");
+  capture.arg("test");
+  capture.captureStdout(true);
+  capture.captureStderr(true);
+  printSuccess(`Builder configured for output capture`);
+
+  printSuccess("\n✓ All ProcessBuilder configurations demonstrated!");
+  printInfo("\nTip: Use spawnWithOptions() or execCommand() to execute built commands.");
 }
 
-main().catch(console.error);
+main();
