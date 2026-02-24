@@ -285,12 +285,10 @@ describe("Scroll Tests", () => {
     expect(() => setScrollRegion(5, 15)).not.toThrow();
   });
 
-  test("resetScrollRegion should not throw in TTY or throw gracefully in non-TTY", () => {
-    if (isStdoutTty()) {
-      expect(() => resetScrollRegion()).not.toThrow();
-    } else {
-      expect(() => resetScrollRegion()).toThrow();
-    }
+  test("resetScrollRegion should not throw in TTY or non-TTY", () => {
+    // resetScrollRegion should work gracefully in both TTY and non-TTY environments
+    // It handles errors internally and doesn't throw
+    expect(() => resetScrollRegion()).not.toThrow();
   });
 });
 
@@ -318,12 +316,10 @@ describe("Alternate Screen Tests", () => {
 // Raw Mode Tests
 // ============================================
 describe("Raw Mode Tests", () => {
-  test("enableRawMode should not throw in TTY or throw gracefully in non-TTY", () => {
-    if (isStdoutTty()) {
-      expect(() => enableRawMode()).not.toThrow();
-    } else {
-      expect(() => enableRawMode()).toThrow();
-    }
+  test("enableRawMode should not throw in TTY or non-TTY", () => {
+    // enableRawMode should work gracefully in both TTY and non-TTY environments
+    // It handles errors internally and doesn't throw
+    expect(() => enableRawMode()).not.toThrow();
   });
 
   test("disableRawMode should not throw", () => {
