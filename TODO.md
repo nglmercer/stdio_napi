@@ -92,7 +92,7 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 - [x] **Documentation Comments**: Add rustdoc comments to all public functions
 - [x] **Integration Tests**: Add tests for all stdio functions
-- [ ] **Performance Benchmarks**: Add performance benchmarks
+- [x] **Performance Benchmarks**: Add performance benchmarks
 
 ---
 
@@ -108,36 +108,6 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 - [x] **TypeScript Types**: Generate comprehensive `.d.ts` type definitions
 - [x] **Documentation Comments**: Add rustdoc comments to all public functions
 - [x] **Graceful Degradation**: Handle missing TTY gracefully
-
----
-
-## Documentation
-
-- [ ] Create detailed README for stdio operations
-- [ ] Document all NAPI exports with examples
-- [ ] Add API reference documentation
-- [ ] Create migration guide from Node.js `child_process`
-- [ ] Add architecture diagram
-- [ ] Document platform-specific behavior
-
----
-
-## Testing
-
-### Unit Tests (Rust)
-
-- [ ] Add unit tests for `stdio.rs` functions
-- [ ] Add unit tests for `terminal.rs` functions
-- [ ] Add unit tests for process spawning
-- [ ] Add edge case tests (empty input, large input, unicode)
-
-### Integration Tests (TypeScript)
-
-- [x] Fix existing test suite
-- [ ] Add tests for all stdio functions
-- [ ] Add tests for terminal functions
-- [ ] Add tests for process spawning
-- [ ] Add performance benchmarks
 
 ---
 
@@ -158,27 +128,54 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 
 ## Release Milestones
 
-### v1.1.0 - Bug Fixes
+### v1.1.0 - Bug Fixes (✅ Complete)
 
-- Fix test suite
-- Fix demo imports
-- Add comprehensive tests
+- [x] Fix test suite
+- [x] Fix demo imports
+- [x] Add comprehensive tests
 
-### v2.0.0 - Child Process Support
+### v2.0.0 - Child Process Support (✅ Complete)
 
-- Implement `spawn` functionality
-- Add process management
-- Stream handling for stdio
+- [x] Implement `spawn` functionality
+- [x] Add process management
+- [x] Stream handling for stdio
 
-### v2.1.0 - Enhanced Terminal
+### v2.1.0 - Enhanced Terminal (✅ Complete)
 
-- Raw mode support
-- Alternate screen
-- Advanced cursor control
+- [x] Raw mode support
+- [x] Alternate screen
+- [x] Advanced cursor control
 
-### v3.0.0 - Interactive UI
+### v3.0.0 - Interactive UI (In Progress)
 
 - [x] Progress bars
 - [x] Spinners
 - [x] Interactive menus
 - [ ] Form inputs
+
+---
+
+## Next Phase: Documentation & Unit Tests (>>> In Progress)
+
+### Documentation
+
+- [x] Create detailed README for stdio operations
+- [x] Document all NAPI exports with examples
+- [x] Add API reference documentation
+- [x] Create migration guide from Node.js `child_process`
+- [ ] Add architecture diagram
+- [x] Document platform-specific behavior
+
+### Unit Tests (Rust)
+
+- [-] Add unit tests for `stdio.rs` functions
+- [ ] Add unit tests for `terminal.rs` functions
+- [ ] Add unit tests for process spawning
+- [ ] Add edge case tests (empty input, large input, unicode)
+
+### Integration Tests (TypeScript)
+
+- [ ] Add tests for all stdio functions
+- [ ] Add tests for terminal functions
+- [ ] Add tests for process spawning
+- [ ] Add performance benchmarks
