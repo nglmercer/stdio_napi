@@ -675,7 +675,6 @@ mod tests {
         let _reader = BufferedReader::new();
         let _default_reader = BufferedReader::default();
         // Just verify they can be created
-        assert!(true);
     }
 
     /// Test with empty string inputs

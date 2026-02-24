@@ -439,15 +439,13 @@ mod tests {
     #[test]
     fn test_is_mouse_supported() {
         // Just check it returns a bool
-        let result = is_mouse_supported();
-        assert!(result == true || result == false);
+        let _result = is_mouse_supported();
     }
 
     #[test]
     fn test_mouse_event_listener_creation() {
         let _listener = MouseEventListener::new();
         // Should be able to create without error
-        assert!(true);
     }
 
     #[test]

@@ -545,7 +545,7 @@ impl TerminalMultiplexer {
             .clone();
 
         let new_pane_id = generate_id("p");
-        let percentage = options.percentage.unwrap_or(50).min(100).max(1);
+        let percentage = options.percentage.unwrap_or(50).clamp(1, 100);
         let split_horizontal = options.split.as_deref() == Some("horizontal");
 
         let (existing_width, existing_height, new_width, new_height, new_x, new_y) =

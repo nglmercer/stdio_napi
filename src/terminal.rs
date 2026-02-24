@@ -526,13 +526,9 @@ mod tests {
 
     #[test]
     fn test_tty_functions_return_bool() {
-        let stdout_tty = is_stdin_tty();
-        let stderr_tty = is_stderr_tty();
-        let stdin_tty = is_stdin_tty();
-
-        assert!(stdout_tty == true || stdout_tty == false);
-        assert!(stderr_tty == true || stderr_tty == false);
-        assert!(stdin_tty == true || stdin_tty == false);
+        let _stdout_tty = is_stdout_tty();
+        let _stderr_tty = is_stderr_tty();
+        let _stdin_tty = is_stdin_tty();
     }
 
     #[test]

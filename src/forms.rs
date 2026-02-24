@@ -520,11 +520,7 @@ pub async fn form_multi_select_input(config: FormFieldConfig) -> napi::Result<Fo
             for (i, opt) in options.iter().enumerate() {
                 let checkbox = if selected[i] { "[x]" } else { "[ ]" };
                 if i == selected_idx {
-                    println!(
-                        " > {} {}",
-                        checkbox.green().bold(),
-                        opt.green().bold()
-                    );
+                    println!(" > {} {}", checkbox.green().bold(), opt.green().bold());
                 } else {
                     println!("   {} {}", checkbox, opt);
                 }
@@ -566,12 +562,7 @@ pub async fn form_multi_select_input(config: FormFieldConfig) -> napi::Result<Fo
                     for (i, opt) in options.iter().enumerate() {
                         let checkbox = if selected[i] { "[x]" } else { "[ ]" };
                         if i == selected_idx {
-                            println!(
-                                " > {} {}",
-                                ">",
-                                checkbox.green().bold(),
-                                opt.green().bold()
-                            );
+                            println!(" > {} {}", checkbox.green().bold(), opt.green().bold());
                         } else {
                             println!("   {} {}", checkbox, opt);
                         }

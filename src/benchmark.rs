@@ -238,7 +238,7 @@ pub fn benchmark_terminal_size(iterations: Option<u32>) -> napi::Result<Benchmar
 pub fn benchmark_shell_escape(iterations: Option<u32>) -> napi::Result<BenchmarkResult> {
     let iters = iterations.unwrap_or(10000);
 
-    let test_inputs = vec![
+    let test_inputs = [
         "simple",
         "with spaces",
         "with 'quotes'",
@@ -271,7 +271,7 @@ pub fn benchmark_shell_escape(iterations: Option<u32>) -> napi::Result<Benchmark
 pub fn benchmark_key_parsing(iterations: Option<u32>) -> napi::Result<BenchmarkResult> {
     let iters = iterations.unwrap_or(10000);
 
-    let test_combinations = vec![
+    let test_combinations = [
         "a",
         "ctrl+c",
         "ctrl+shift+s",

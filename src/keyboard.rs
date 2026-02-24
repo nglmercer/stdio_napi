@@ -419,7 +419,7 @@ pub async fn wait_for_shortcut(shortcut: String) -> napi::Result<bool> {
         }
 
         // Check if key matches
-        let key_match = expected_key.as_ref().map_or(false, |k| {
+        let key_match = expected_key.as_ref().is_some_and(|k| {
             let lower_k = k.to_lowercase();
             key.code.to_lowercase() == lower_k || key.key.to_lowercase() == lower_k
         });
@@ -467,8 +467,7 @@ mod tests {
     #[test]
     fn test_is_keyboard_available() {
         // Just check it returns a bool
-        let result = is_keyboard_available();
-        assert!(result == true || result == false);
+        let _result = is_keyboard_available();
     }
 
     #[test]
