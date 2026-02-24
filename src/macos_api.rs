@@ -624,11 +624,11 @@ mod tests {
     #[test]
     fn test_system_memory_info() {
         let info = SystemMemoryInfo {
-            total: 16_000_000_000,
-            free: 8_000_000_000,
-            available: 12_000_000_000,
-            used: 4_000_000_000,
+            total_mb: 16000,
+            free_mb: 8000,
+            available_mb: 12000,
+            used_mb: 4000,
         };
-        assert!(info.total > 0);
+        assert!(info.total_mb > 0);
     }
 }

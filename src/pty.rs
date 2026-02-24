@@ -257,7 +257,9 @@ pub fn get_pty_name(fd: u32) -> napi::Result<String> {
                     .to_string_lossy()
                     .into_owned())
             } else {
-                Err(napi::Error::from_reason(format!("Failed to get PTY name",)))
+                Err(napi::Error::from_reason(
+                    "Failed to get PTY name".to_string(),
+                ))
             }
         }
     }
