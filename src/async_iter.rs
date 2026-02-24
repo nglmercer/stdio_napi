@@ -427,7 +427,7 @@ impl ProcessBuilder {
     }
 
     #[napi]
-    pub fn to_command_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         let mut cmd = self.command.clone();
         for arg in &self.args {
             cmd.push(' ');
@@ -440,6 +440,11 @@ impl ProcessBuilder {
             }
         }
         cmd
+    }
+
+    #[napi]
+    pub fn to_command_string(&self) -> String {
+        self.to_string()
     }
 
     #[napi]
