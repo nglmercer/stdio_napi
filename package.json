@@ -1,5 +1,5 @@
 {
-  "name": "napi-template-bun",
+  "name": "stdio-napi",
   "version": "1.0.0",
   "description": "Template for NAPI (Node-API) native addons with Bun runtime",
   "keywords": [
@@ -59,7 +59,7 @@
     "bun": ">=1.0.0"
   },
   "napi": {
-    "binaryName": "template",
+    "binaryName": "stdio-napi",
     "targets": [
       "x86_64-pc-windows-msvc",
       "i686-pc-windows-msvc",

@@ -1,20 +1,15 @@
-# napi-template-bun
+# stdio-napi
 
-A template for building NAPI (Node-API) native addons using Rust with Bun runtime.
+A powerful NAPI (Node-API) native addon built with Rust for advanced standard input/output and terminal operations in Node.js/Bun.
 
 ## Features
 
-- **Rust-based** native modules using `napi` crate
-- **Bun runtime** support for fast development
-- **Cross-platform** builds for Windows, macOS, and Linux
-- **TypeScript** support with automatic type definitions
-- **Modern tooling** with @napi-rs/cli
-
-## Prerequisites
-
-- Node.js >= 18.0.0
-- Bun >= 1.0.0
-- Rust toolchain (stable)
+- **Standard I/O Wrappers**: Easy-to-use functions for writing to stdout/stderr.
+- **Async Stdin**: Non-blocking input reading from Rust.
+- **Terminal Operations**: Get terminal size, clear screen, and move cursor.
+- **Colored Output**: Built-in support for colored terminal messages (Success, Info, Warning, Error).
+- **TypeScript Support**: Automatic type definitions generation.
+- **Bun Optimized**: Seamless integration with Bun runtime.
 
 ## Installation
 
@@ -25,68 +20,58 @@ bun install
 ## Building
 
 ### Release build
+
 ```bash
 bun run build
 ```
 
 ### Debug build
+
 ```bash
 bun run build:debug
 ```
 
-## Development
+## Usage Example
 
-Run the example development script:
-```bash
-bun run dev
+```typescript
+import { printSuccess, prompt, getTerminalSize } from "stdio-napi";
+
+async function main() {
+  const size = getTerminalSize();
+  console.log(`Working in ${size.columns}x${size.rows} terminal`);
+
+  printSuccess("stdio-napi is ready!");
+
+  const name = await prompt("Enter your name");
+  console.log(`Hello, ${name}!`);
+}
+
+main();
 ```
 
-## Testing
+## API Reference
 
-```bash
-bun test
-```
+### Stdio
 
-## Code Quality
+- `printStdout(text: string)`: Write text to stdout.
+- `printStderr(text: string)`: Write text to stderr.
+- `printSuccess(text: string)`: Print bold green text.
+- `printError(text: string)`: Print bold red text to stderr.
+- `printWarning(text: string)`: Print yellow text.
+- `printInfo(text: string)`: Print blue text.
+- `readLine(): Promise<string>`: Read a line from stdin asynchronously.
+- `prompt(message: string): Promise<string>`: Show a prompt and read input.
 
-### Format
-```bash
-bun run format
-```
+### Terminal
 
-### Lint (Rust)
-```bash
-bun run lint
-```
+- `getTerminalSize(): TerminalSize`: Returns `{ columns: number, rows: number }`.
+- `clearScreen()`: Clears the terminal screen.
+- `moveCursor(column: number, row: number)`: Moves cursor to specified position.
 
-### Type Check
-```bash
-bun run type-check
-```
+### Misc
 
-## Cleaning
-
-```bash
-bun run clean
-```
-
-## Project Structure
-
-- `Cargo.toml` - Rust crate configuration with NAPI dependencies
-- `package.json` - Node.js package configuration with build scripts
-- `src/` - Rust source code
-- `examples/` - Usage examples
-
-## Supported Platforms
-
-- Windows (x86_64, i686)
-- macOS (x86_64, aarch64)
-- Linux (x86_64, aarch64)
+- `getVersion()`: returns the current library version.
 
 ## License
 
 MIT
-
-## Author
-
-Your Name <email@example.com>

@@ -1,50 +1,27 @@
 import { expect, test, describe } from "bun:test";
 import {
-  Message,
-  MessageType,
-  createGreeting,
-  add,
-  processNumbers,
-  divideNumbers,
-  generateSequence,
-  delayedMessage,
-} from "../index";
+  getVersion,
+  getTerminalSize,
+  printSuccess,
+  printInfo
+} from "../index.js";
 
-describe("NAPI Module Tests", () => {
-  // 1. Test Synchronous Functions
-  test("math operations: add and divide", () => {
-    expect(add(1, 5)).toBe(6);
-    expect(divideNumbers(1, 2)).toBe(0.5);
+describe("stdio-napi Tests", () => {
+  test("getVersion should return a string", () => {
+    const version = getVersion();
+    expect(typeof version).toBe("string");
+    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  test("string formatting: createGreeting", () => {
-    const greeting = createGreeting("user", "-");
-    expect(greeting).toContain("user");
-    expect(greeting).toBe("- user, welcome to NAPI!");
+  test("getTerminalSize should return columns and rows", () => {
+    const size = getTerminalSize();
+    expect(size).toBeDefined();
+    expect(typeof size.columns).toBe("number");
+    expect(typeof size.rows).toBe("number");
   });
 
-  test("array mapping: processNumbers", () => {
-    const result = processNumbers([1, 2, 3]);
-    expect(result).toEqual([2, 4, 6]);
-  });
-
-  // 2. Test Classes
-  test("Message class instantiation", () => {
-    const msg = new Message("hello", MessageType.Info);
-    expect(msg).toBeDefined();
-    // Use the methods your console.log suggested exist
-    expect(typeof msg.getTypeString).toBe("function");
-  });
-
-  // 3. Test Asynchronous Functions
-  test("async sequence generation", async () => {
-    const sequence = await generateSequence(1, 5);
-    expect(sequence).toHaveLength(5);
-    expect(sequence).toEqual([1, 2, 3, 4, 5]);
-  });
-
-  test("async delayed message", async () => {
-    const message = await delayedMessage(100); // Reduced delay for faster tests
-    expect(message).toBe("Success after delay");
+  test("print functions should exist", () => {
+    expect(typeof printSuccess).toBe("function");
+    expect(typeof printInfo).toBe("function");
   });
 });
