@@ -30,62 +30,51 @@ A NAPI-RS native addon for Node.js/Bun providing stdio operations, terminal util
 #### Terminal Utilities (`src/terminal.rs`)
 
 - [x] **Terminal Size**: `get_terminal_size()` - Get terminal columns and rows
+- [x] **Terminal Info**: `get_terminal_info()` - Get terminal type and color support
 - [x] **Clear Screen**: `clear_screen()` - Clear terminal and reset cursor
 - [x] **Cursor Movement**: `move_cursor(column: u16, row: u16)` - Move cursor to position
+- [x] **Show Cursor**: `show_cursor()` - Show cursor
+- [x] **Hide Cursor**: `hide_cursor()` - Hide cursor
+- [x] **Set Cursor Shape**: `set_cursor_shape(shape: CursorShape)` - Change cursor shape
+- [x] **Set Terminal Title**: `set_terminal_title(title: String)` - Set terminal title
+- [x] **Enter Alternate Screen**: `enter_alternate_screen()` - Enter alternate screen buffer
+- [x] **Leave Alternate Screen**: `leave_alternate_screen()` - Leave alternate screen buffer
+- [x] **Enable Raw Mode**: `enable_raw_mode()` - Enable raw mode
+- [x] **Disable Raw Mode**: `disable_raw_mode()` - Disable raw mode
+- [x] **Set Scroll Region**: `set_scroll_region(top: u16, bottom: u16)` - Set scroll region
+- [x] **Reset Scroll Region**: `reset_scroll_region()` - Reset scroll region to full terminal
 
 #### Utility Functions (`src/lib.rs`)
 
 - [x] **Version Info**: `get_version()` - Get package version
 
+#### Child Process Spawning (`src/process.rs`)
+
+- [x] **Basic Spawn**: `exec_command(command: String, args: Vec<String>)` - Spawn and wait for a child process
+- [x] **Spawn with Options**: `spawn_with_options(options: SpawnOptions)` - Spawn with configuration
+- [x] **Process Status**: `ProcessStatus` struct with PID, exit code, success flag
+- [x] **Process Output**: `ProcessOutput` struct with stdout, stderr, code, success
+- [x] **Spawn with Pipes**: `spawn_with_pipes(options: SpawnOptions)` - Spawn with piped stdio
+- [x] **Exec Sync**: `exec_sync(command: String)` - Synchronous command execution
+- [x] **Exec Sync with Args**: `exec_sync_with_args(command: String, args: Vec<String>)` - Sync with arguments
+- [x] **Shell Escape**: `shell_escape(input: String)` - Escape shell arguments
+- [x] **Shell Escape Args**: `shell_escape_args(args: Vec<String>)` - Escape multiple arguments
+- [x] **Process Kill**: `kill_process(pid: u32, signal: Option<String>)` - Kill process by PID
+
 ---
 
 ## Features to Implement
 
-### Child Process Spawning (`src/process.rs`)
+### Advanced Stdio Features (>>> In Progress)
 
-High priority for v2.0.0:
-
-- [ ] **Basic Spawn**: `spawn(command: String, args: Vec<String>)` - Spawn a child process
-- [ ] **Spawn with Options**: `spawn_with_options(options: SpawnOptions)` - Spawn with configuration
-  ```rust
-  struct SpawnOptions {
-      command: String,
-      args: Vec<String>,
-      cwd: Option<String>,
-      env: Option<HashMap<String, String>>,
-      timeout: Option<u32>,
-  }
-  ```
-- [ ] **Stdout Pipe**: Read stdout from child process asynchronously
-- [ ] **Stderr Pipe**: Read stderr from child process asynchronously
-- [ ] **Stdin Pipe**: Write to stdin of child process
-- [ ] **Process Status**: `ProcessStatus` struct with PID, exit code, signal
-- [ ] **Process Kill**: `kill(pid: u32, signal: Option<String>)` - Terminate process
-- [ ] **Process Wait**: `wait(pid: u32)` - Wait for process completion
-- [ ] **Exec Sync**: `exec_sync(command: String)` - Synchronous command execution
-- [ ] **Shell Escape**: Utility for safe shell command escaping
-
-### Enhanced Terminal Features
-
-- [ ] **Terminal Type Detection**: Detect terminal emulator type
-- [ ] **Color Support Detection**: Check truecolor/256 color support
-- [ ] **Raw Mode**: Enter/exit raw terminal mode
-- [ ] **Alternate Screen**: Switch to alternate screen buffer
-- [ ] **Cursor Visibility**: Show/hide cursor
-- [ ] **Cursor Shape**: Change cursor shape (block, underline, bar)
-- [ ] **Scroll Region**: Set scroll region
-- [ ] **Title Support**: Get/set terminal title
-
-### Advanced Stdio Features
-
-- [ ] **Buffered Reader**: `BufferedReader` class for efficient reading
-- [ ] **Line Iterator**: Async iterator for reading lines
-- [ ] **Progress Bar**: Built-in progress bar utilities
-- [ ] **Spinner**: Loading spinner animation
-- [ ] **Multi-line Input**: Read multiple lines until delimiter
-- [ ] **Password Input**: Masked password input
-- [ ] **Select Menu**: Interactive selection menu
-- [ ] **Confirm Dialog**: Yes/No confirmation with default
+- [>>>] **Buffered Reader**: `BufferedReader` class for efficient reading
+- [>>>] **Line Iterator**: Async iterator for reading lines
+- [>>>] **Progress Bar**: Built-in progress bar utilities
+- [>>>] **Spinner**: Loading spinner animation
+- [>>>] **Multi-line Input**: Read multiple lines until delimiter
+- [>>>] **Password Input**: Masked password input
+- [>>>] **Select Menu**: Interactive selection menu
+- [>>>] **Confirm Dialog**: Yes/No confirmation with default
 
 ### Stream Handling
 
@@ -100,10 +89,8 @@ High priority for v2.0.0:
 
 ### Critical
 
-- [ ] **Fix Test Suite**: Tests in `tests/index.test.ts` reference non-existent functions
-  - `Message`, `MessageType`, `createGreeting`, `add`, `processNumbers`
-  - `divideNumbers`, `generateSequence`, `delayedMessage`
-- [ ] **Fix Demo Imports**: `examples/demo.ts` imports `printStdout` but function is `print_stdout`
+- [x] **Fix Test Suite**: Tests in `tests/index.test.ts` reference non-existent functions
+- [x] **Fix Demo Imports**: `examples/demo.ts` imports corrected
 
 ### Improvements
 
@@ -137,7 +124,7 @@ High priority for v2.0.0:
 
 ### Integration Tests (TypeScript)
 
-- [ ] Fix existing test suite
+- [x] Fix existing test suite
 - [ ] Add tests for all stdio functions
 - [ ] Add tests for terminal functions
 - [ ] Add tests for process spawning
@@ -145,17 +132,18 @@ High priority for v2.0.0:
 
 ---
 
-## Dependencies to Consider
+## Dependencies
 
-| Crate         | Purpose          | Status                |
-| ------------- | ---------------- | --------------------- |
-| `tokio`       | Async runtime    | ✅ Added              |
-| `crossterm`   | Terminal control | ✅ Added              |
-| `colored`     | Color output     | ✅ Added              |
-| `napi`        | Node bindings    | ✅ Added              |
-| `libc`        | Unix syscalls    | 🔲 Needed for signals |
-| `windows-sys` | Windows APIs     | 🔲 Needed for Windows |
-| `which`       | Find executable  | 🔲 Optional           |
+| Crate         | Purpose          | Status      |
+| ------------- | ---------------- | ----------- |
+| `tokio`       | Async runtime    | ✅ Added    |
+| `crossterm`   | Terminal control | ✅ Added    |
+| `colored`     | Color output     | ✅ Added    |
+| `napi`        | Node bindings    | ✅ Added    |
+| `libc`        | Unix syscalls    | ✅ Added    |
+| `errno`       | Error numbers    | ✅ Added    |
+| `windows-sys` | Windows APIs     | 🔲 Future   |
+| `which`       | Find executable  | 🔲 Optional |
 
 ---
 

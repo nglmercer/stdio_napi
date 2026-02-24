@@ -1,8 +1,10 @@
 mod stdio;
 mod terminal;
+mod process;
 
 pub use stdio::*;
 pub use terminal::*;
+pub use process::*;
 
 use napi_derive::napi;
 

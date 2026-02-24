@@ -2,6 +2,7 @@ use napi_derive::napi;
 use std::io::{self, Write};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use colored::*;
+use crossterm::execute;
 
 #[napi]
 pub fn print_stdout(text: String) {
@@ -54,4 +55,210 @@ pub async fn prompt(message: String) -> napi::Result<String> {
     let _ = io::stdout().flush();
     
     read_line().await
+}
+
+#[napi]
+pub async fn confirm(message: String, default: Option<bool>) -> napi::Result<bool> {
+    let def = default.unwrap_or(true);
+    let suffix = if def { "[Y/n]" } else { "[y/N]" };
+    print!("{} {}: ", message.cyan(), suffix);
+    let _ = io::stdout().flush();
+    
+    let input = read_line().await?;
+    let input = input.trim().to_lowercase();
+    
+    if input.is_empty() {
+        return Ok(def);
+    }
+    
+    if input == "y" || input == "yes" {
+        return Ok(true);
+    }
+    
+    if input == "n" || input == "no" {
+        return Ok(false);
+    }
+    
+    Ok(def)
+}
+
+#[napi]
+pub fn print_progress(current: u32, total: u32, width: Option<u32>) {
+    let w = width.unwrap_or(20) as usize;
+    let total_f = total as f32;
+    let current_f = current as f32;
+    let percent = (current_f / total_f).min(1.0);
+    let filled = (percent * w as f32) as usize;
+    let empty = w - filled;
+    
+    let bar = format!(
+        "\r[{}{}] {:>3}%",
+        "=".repeat(filled),
+        " ".repeat(empty),
+        (percent * 100.0) as u32
+    );
+    
+    print!("{}", bar);
+    let _ = io::stdout().flush();
+    
+    if current >= total {
+        println!();
+    }
+}
+
+#[napi]
+pub fn get_spinner_frame(frame: u32) -> String {
+    let frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    frames[(frame as usize) % frames.len()].to_string()
+}
+
+#[napi]
+pub async fn read_password(mask: Option<String>) -> napi::Result<String> {
+    use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+    use crossterm::terminal;
+    
+    let mask_char = mask.as_deref().and_then(|s| s.chars().next());
+    let mut password = String::new();
+    
+    terminal::enable_raw_mode().map_err(|e| {
+        napi::Error::from_reason(format!("Failed to enable raw mode: {}", e))
+    })?;
+    
+    let result = async {
+        loop {
+            if event::poll(std::time::Duration::from_millis(100)).map_err(|e| {
+                napi::Error::from_reason(format!("Poll error: {}", e))
+            })? {
+                if let Event::Key(KeyEvent { code, modifiers, .. }) = event::read().map_err(|e| {
+                    napi::Error::from_reason(format!("Read error: {}", e))
+                })? {
+                    match code {
+                        KeyCode::Enter => {
+                            println!();
+                            break;
+                        }
+                        KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
+                            return Err(napi::Error::from_reason("Interrupted".to_string()));
+                        }
+                        KeyCode::Char(c) => {
+                            password.push(c);
+                            if let Some(m) = mask_char {
+                                print!("{}", m);
+                                let _ = io::stdout().flush();
+                            }
+                        }
+                        KeyCode::Backspace => {
+                            if !password.is_empty() {
+                                password.pop();
+                                if mask_char.is_some() {
+                                    print!("\x08 \x08");
+                                    let _ = io::stdout().flush();
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        Ok(password)
+    }.await;
+    
+    let _ = terminal::disable_raw_mode();
+    result
+}
+
+#[napi]
+pub async fn select_menu(message: String, options: Vec<String>) -> napi::Result<u32> {
+    use crossterm::event::{self, Event, KeyCode, KeyEvent};
+    use crossterm::terminal;
+    use crossterm::cursor;
+    
+    if options.is_empty() {
+        return Err(napi::Error::from_reason("Options cannot be empty".to_string()));
+    }
+    
+    let mut selected = 0;
+    
+    println!("{}: ", message.cyan());
+    
+    terminal::enable_raw_mode().map_err(|e| {
+        napi::Error::from_reason(format!("Failed to enable raw mode: {}", e))
+    })?;
+    
+    let result = async {
+        loop {
+            // Draw options
+            for (i, opt) in options.iter().enumerate() {
+                if i == selected {
+                    println!(" > {}", opt.green().bold());
+                } else {
+                    println!("   {}", opt);
+                }
+            }
+            
+            // Wait for key
+            let code = loop {
+                if event::poll(std::time::Duration::from_millis(100)).map_err(|e| {
+                    napi::Error::from_reason(format!("Poll error: {}", e))
+                })? {
+                    if let Event::Key(KeyEvent { code, .. }) = event::read().map_err(|e| {
+                        napi::Error::from_reason(format!("Read error: {}", e))
+                    })? {
+                        break code;
+                    }
+                }
+            };
+            
+            // Clear drawn options
+            execute!(io::stdout(), cursor::MoveUp(options.len() as u16)).map_err(|e| {
+                napi::Error::from_reason(format!("Cursor error: {}", e))
+            })?;
+            
+            match code {
+                KeyCode::Up => {
+                    selected = if selected == 0 { options.len() - 1 } else { selected - 1 };
+                }
+                KeyCode::Down => {
+                    selected = (selected + 1) % options.len();
+                }
+                KeyCode::Enter => {
+                    // Redraw one last time with selection and then move cursor past the list
+                    for (i, opt) in options.iter().enumerate() {
+                        if i == selected {
+                            println!(" > {}", opt.green().bold());
+                        } else {
+                            println!("   {}", opt);
+                        }
+                    }
+                    break;
+                }
+                KeyCode::Char('c') if event::poll(std::time::Duration::from_millis(0)).is_ok() => {
+                    // Simple ctrl-c handle could be added better but this is fine for now
+                }
+                _ => {}
+            }
+        }
+        Ok(selected as u32)
+    }.await;
+    
+    let _ = terminal::disable_raw_mode();
+    result
+}
+
+#[napi]
+pub async fn read_multiline(delimiter: Option<String>) -> napi::Result<String> {
+    let delim = delimiter.unwrap_or_else(|| "EOF".to_string());
+    println!("(Enter '{}' on a new line to finish)", delim.yellow());
+    
+    let mut lines = Vec::new();
+    loop {
+        let line = read_line().await?;
+        if line == delim {
+            break;
+        }
+        lines.push(line);
+    }
+    
+    Ok(lines.join("\n"))
 }

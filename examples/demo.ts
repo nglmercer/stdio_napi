@@ -5,6 +5,9 @@ import {
   printInfo,
   printWarning,
   prompt,
+  confirm,
+  readPassword,
+  printProgress,
   getTerminalSize,
   clearScreen,
   getVersion,
@@ -26,8 +29,22 @@ async function main() {
   const name = await prompt("What is your name?");
   printSuccess(`Hello, ${name}!`);
 
-  const shouldClear = await prompt("Should I clear the screen? (y/n)");
-  if (shouldClear.toLowerCase() === "y") {
+  const hasPassword = await confirm("Would you like to enter a secret password?", true);
+  if (hasPassword) {
+    printInfo("Enter your secret (it will be masked with *):");
+    const secret = await readPassword("*");
+    printSuccess("Secret received!");
+  }
+
+  printInfo("Simulating progress...");
+  for (let i = 0; i <= 100; i += 10) {
+    printProgress(i, 100);
+    await new Promise(r => setTimeout(r, 100));
+  }
+  printSuccess("Task complete!");
+  
+  const shouldClear = await confirm("Should I clear the screen?", false);
+  if (shouldClear) {
     clearScreen();
     printSuccess("Screen cleared!");
   } else {
